@@ -1,0 +1,46 @@
+.form-control {
+	box-sizing: border-box;
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: flex-start;
+	justify-content: flex-start;
+	width: 100%;
+	margin-bottom: 8px;
+	&.top-label {
+		align-items: flex-start;
+	}
+	&.left-label {
+		flex-direction: row;
+		justify-content: flex-end;
+		align-items: center;
+		& > label {
+			margin-right: 8px;
+		}
+	}
+	&.right-label {
+		flex-direction: row-reverse;
+		justify-content: flex-end;
+		align-items: center;
+		& > label {
+			margin-left: 8px;
+		}
+	}
+	&.bottom-label {
+		flex-direction: column-reverse;
+	}
+
+	& > label {
+		display: block;
+		color: var(--foreground);
+		cursor: pointer;
+		font-size: var(--type-ramp-base-font-size);
+		line-height: var(--type-ramp-base-line-height);
+		margin-bottom: 2px;
+	}
+
+	& .control {
+		&.text-field {
+			width: 100%;
+		}
+	}
+}

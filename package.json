@@ -1,0 +1,149 @@
+{
+	"name": "db-lens",
+	"displayName": "db-lens",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.94.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "db-lens.helloWorld",
+				"title": "Hello World"
+			},
+			{
+				"command": "db-lens.connect",
+				"title": "Connect",
+				"icon": "$(plug)"
+			},
+			{
+				"command": "db-lens.query",
+				"title": "Query",
+				"icon": "$(search)"
+			},
+			{
+				"command": "db-lens.reload",
+				"title": "Reload",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "db-lens.disconnect",
+				"title": "Disconnect",
+				"icon": "$(debug-disconnect)"
+			},
+			{
+				"command": "db-lens.configure",
+				"title": "Configure",
+				"icon": "$(edit)"
+			},
+			{
+				"command": "db-lens.copyToQueryView",
+				"title": "Use in DB Lens",
+				"icon": "$(copy)"
+			}
+		],
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "dbLens",
+					"title": "DB Lens",
+					"icon": "resources/icon.png"
+				}
+			]
+		},
+		"views": {
+			"dbLens": [
+				{
+					"id": "dbLensSidebar",
+					"name": "DB Lens",
+					"icon": "resources/icon.png",
+					"type": "tree"
+				}
+			]
+		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "db-lens.connect",
+					"when": "view == dbLensSidebar && viewItem == connection",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.configure",
+					"when": "view == dbLensSidebar && viewItem == connection",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.query",
+					"when": "view == dbLensSidebar && viewItem == connection.connected",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.reload",
+					"when": "view == dbLensSidebar && viewItem == connection.connected",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.disconnect",
+					"when": "view == dbLensSidebar && viewItem == connection.connected",
+					"group": "inline"
+				}
+			]
+		},
+		"configuration": {
+			"title": "DB Lens",
+			"properties": {
+				"db-lens.baseDir": {
+					"title": "Base Directory",
+					"type": "string",
+					"description": "The base directory for DB Lens."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run package",
+		"compile": "npm run check-types && npm run lint && node esbuild.js",
+		"watch": "npm-run-all -p watch:*",
+		"watch:esbuild": "node esbuild.js --watch",
+		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+		"package": "npm run check-types && npm run lint && node esbuild.js --production",
+		"compile-tests": "tsc -p . --outDir out",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
+		"check-types": "tsc --noEmit",
+		"lint": "eslint src",
+		"test": "./node_modules/.bin/mocha .mocharc.js",
+		"vscode:test": "npm run pretest && vscode-test"
+	},
+	"devDependencies": {
+		"@types/chai": "^4.3.20",
+		"@types/mocha": "^10.0.10",
+		"@types/mock-require": "^3.0.0",
+		"@types/node": "^20.19.9",
+		"@types/pg": "^8.11.10",
+		"@types/sinon": "^17.0.4",
+		"@types/vscode": "^1.94.0",
+		"@typescript-eslint/eslint-plugin": "^8.7.0",
+		"@typescript-eslint/parser": "^8.7.0",
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.4.1",
+		"chai": "^4.5.0",
+		"esbuild": "^0.24.0",
+		"eslint": "^9.11.1",
+		"mocha": "^11.7.1",
+		"mock-require": "^3.0.3",
+		"npm-run-all": "^4.1.5",
+		"sinon": "^21.0.0",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.6.2"
+	},
+	"dependencies": {
+		"pg": "^8.16.3"
+	}
+}

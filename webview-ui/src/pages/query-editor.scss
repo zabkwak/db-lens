@@ -1,0 +1,21 @@
+.query-editor {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+
+	& > .query-section {
+		flex-direction: row;
+		align-items: center;
+
+		& > .query-input {
+			flex: 1;
+		}
+
+		& > .query-button {
+		}
+	}
+
+	& > .result-section {
+		flex: 1 1 0;
+	}
+}

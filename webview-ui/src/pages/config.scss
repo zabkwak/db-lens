@@ -1,0 +1,32 @@
+.config {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+
+	& > .form {
+		overflow: auto;
+	}
+	& > .buttons {
+		display: flex;
+		justify-content: space-between;
+		padding: 10px;
+		& > .right-group,
+		& > .left-group {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+		& .button {
+			min-width: 60px;
+			&.close {
+				background-color: red;
+			}
+			&.test-connection {
+				align-self: flex-start;
+				&.success {
+					background-color: green;
+				}
+			}
+		}
+	}
+}

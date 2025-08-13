@@ -1,0 +1,15 @@
+.alert {
+	font-weight: bold;
+	&.alert-error {
+		color: red;
+	}
+	&.alert-warning {
+		color: orange;
+	}
+	&.alert-info {
+		color: blue;
+	}
+	&.alert-success {
+		color: green;
+	}
+}

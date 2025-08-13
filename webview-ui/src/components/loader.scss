@@ -1,0 +1,20 @@
+.loading-indicator {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	& > .ring {
+		&.large {
+			width: 100px;
+			height: 100px;
+		}
+		&.medium {
+			width: 64px;
+			height: 64px;
+		}
+		&.small {
+			width: 32px;
+			height: 32px;
+		}
+	}
+}

@@ -1,0 +1,19 @@
+.table-container {
+	// Make container fill available space and stack header + data
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	& > .table-data {
+		// Allow the data area to take remaining space and scroll
+		flex: 1 1 0;
+		min-height: 0;
+		overflow: auto;
+		& > .data-grid {
+			white-space: normal;
+			word-break: break-word;
+			align-self: start;
+			padding-top: 8px;
+		}
+	}
+}

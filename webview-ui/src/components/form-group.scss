@@ -1,0 +1,7 @@
+.form-group {
+	& > .children {
+		border-left: 1px solid var(--vscode-editor-foreground);
+		margin-left: 12px;
+		padding-left: 12px;
+	}
+}
