@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import ConnectionManager from '../connection/connection-manager';
-import Logger from '../logger';
+import ConnectionManager from '../../connection/connection-manager';
+import Logger from '../../logger';
 import TreeItem from './tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import LoadingTreeItem from './tree-items/loading.tree-item';

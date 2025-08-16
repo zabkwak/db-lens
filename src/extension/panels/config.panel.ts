@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { IConnectionConfiguration, IPostMessage } from '../../shared/types';
-import { isCommand } from '../../shared/utils';
-import Connection from '../connection/connection';
-import ConnectionManager from '../connection/connection-manager';
-import Logger from '../logger';
+import { IConnectionConfiguration, IPostMessage } from '../../../shared/types';
+import { isCommand } from '../../../shared/utils';
+import Connection from '../../connection/connection';
+import ConnectionManager from '../../connection/connection-manager';
+import Logger from '../../logger';
 import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
 import ViewManager from '../view-manager';
 import BasePanel from './base.panel';
