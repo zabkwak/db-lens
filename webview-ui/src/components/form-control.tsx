@@ -64,7 +64,6 @@ const FormControl = <T extends keyof IFormType>(props: IProps<T> & ITypeProps[T]
 				type: 'UPDATE_VALUE',
 				payload: {
 					name: props.name,
-					// @ts-expect-error TODO figure out typings
 					value,
 					required: props.required ?? false,
 				},

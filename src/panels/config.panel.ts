@@ -65,7 +65,6 @@ export default class ConfigPanel extends BasePanel {
 					const connection = await this._constructConnection(payload);
 					await ConnectionManager.addConnection(connection);
 					ViewManager.getConnectionTreeProvider().refresh();
-					// TODO add connection to tree
 				} else {
 					// TODO update connection
 					await ConnectionManager.save();
