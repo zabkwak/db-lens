@@ -22,6 +22,7 @@ describe('ConnectionManager', () => {
 	});
 
 	afterEach(() => {
+		ConnectionManager.clear();
 		homeDirStub.restore();
 		getConfigurationStub.reset();
 		getStub.reset();
@@ -223,7 +224,6 @@ describe('ConnectionManager', () => {
 					null,
 					4,
 				),
-				'utf-8',
 			);
 			expect(encoding).to.equal('utf-8');
 		});
@@ -233,7 +233,7 @@ describe('ConnectionManager', () => {
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
 			await expect(
 				ConnectionManager.addConnection(
-					await Connection.create('Test connection', {
+					await Connection.create('Test Connection', {
 						db: {
 							driver: 'postgres',
 							credentials: {
@@ -268,6 +268,53 @@ describe('ConnectionManager', () => {
 					}),
 				),
 			).to.be.rejectedWith(Error, 'Connection with name Test Connection already exists');
+		});
+	});
+
+	describe('.deleteConnection', () => {
+		it('should delete the existing connection', async () => {
+			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
+			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
+			const connection = await Connection.create('Test Connection', {
+				db: {
+					driver: 'postgres',
+					credentials: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						database: 'postgres',
+						schema: 'public',
+						sslRejectUnauthorized: false,
+					},
+				},
+				passwordProvider: {
+					type: 'aws-rds-token',
+					config: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						region: 'us-east-1',
+						profile: 'some-profile',
+					},
+				},
+				sshTunnelOptions: {
+					host: 'bastion',
+					port: 22,
+					username: 'ec2-user',
+					privateKey: '/path/to/private/key',
+					passphrase: null,
+					localPort: 5432,
+					localHost: 'localhost',
+					connectionTimeout: 10000,
+				},
+			});
+			await ConnectionManager.deleteConnection(connection);
+			expect(ConnectionManager.getConnections()).to.have.length(0);
+			expect(writeFileStub.calledOnce).to.be.true;
+			const [filePath, fileContent, encoding] = writeFileStub.firstCall.args;
+			expect(filePath).to.equal(path.join(__dirname, './fixtures/.db-lens/connections.json'));
+			expect(fileContent).to.be.equal('{}');
+			expect(encoding).to.equal('utf-8');
 		});
 	});
 });

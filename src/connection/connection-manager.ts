@@ -42,6 +42,15 @@ export default class ConnectionManager {
 		await this.save();
 	}
 
+	public static async deleteConnection(connection: Connection<any, any>): Promise<void> {
+		if (!this._connections) {
+			await this.load();
+		}
+		assert(this._connections, 'Connections should be loaded before deleting one');
+		this._connections = this._connections.filter((c) => c.getName() !== connection.getName());
+		await this.save();
+	}
+
 	public static async save(): Promise<void> {
 		if (!this._connections) {
 			return;
@@ -67,5 +76,9 @@ export default class ConnectionManager {
 
 	public static getConfigDirectory(): string {
 		return path.join(Config.getBaseDir(), '.db-lens');
+	}
+
+	public static clear(): void {
+		this._connections = null;
 	}
 }

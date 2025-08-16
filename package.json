@@ -50,6 +50,11 @@
 				"command": "db-lens.addConnection",
 				"title": "Add New Connection",
 				"icon": "$(add)"
+			},
+			{
+				"command": "db-lens.removeConnection",
+				"title": "Remove Connection",
+				"icon": "$(trash)"
 			}
 		],
 		"viewsContainers": {
@@ -80,6 +85,11 @@
 				},
 				{
 					"command": "db-lens.configure",
+					"when": "view == dbLensSidebar && viewItem == connection",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.removeConnection",
 					"when": "view == dbLensSidebar && viewItem == connection",
 					"group": "inline"
 				},

@@ -3,6 +3,7 @@
 
 import * as vscode from 'vscode';
 import Connection from './connection/connection';
+import ConnectionManager from './connection/connection-manager';
 import ConfigPanel from './panels/config.panel';
 import QueryPanel from './panels/query.panel';
 import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';
@@ -32,6 +33,17 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('db-lens.addConnection', async () => {
 			new ConfigPanel(context).show();
+		}),
+		vscode.commands.registerCommand('db-lens.removeConnection', async (item: ConnectionTreeItem<any, any>) => {
+			const result = await vscode.window.showWarningMessage(
+				'Are you sure you want to delete this connection?',
+				{ modal: true },
+				'Delete',
+			);
+			if (result === 'Delete') {
+				await ConnectionManager.deleteConnection(item.getConnection());
+				ViewManager.getConnectionTreeProvider().refresh();
+			}
 		}),
 	);
 

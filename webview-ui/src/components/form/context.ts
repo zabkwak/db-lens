@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { IFormType, TFormType } from '../../../../shared/configuration';
+import { TFormType } from '../../../../shared/configuration';
 
 export interface IFormContextStateProperty {
 	value: TFormType;
