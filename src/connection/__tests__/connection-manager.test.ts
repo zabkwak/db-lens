@@ -231,7 +231,7 @@ describe('ConnectionManager', () => {
 		it('should throw an error if connection with name already exists', async () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
-			expect(
+			await expect(
 				ConnectionManager.addConnection(
 					await Connection.create('Test connection', {
 						db: {
