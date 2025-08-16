@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IPostMessage } from '../../shared/types';
+import { IPostMessage } from '../../../shared/types';
 import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
 import BasePanel from './base.panel';
 

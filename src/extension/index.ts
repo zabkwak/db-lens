@@ -2,8 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 
 import * as vscode from 'vscode';
-import Connection from './connection/connection';
-import ConnectionManager from './connection/connection-manager';
+import Connection from '../connection/connection';
+import ConnectionManager from '../connection/connection-manager';
 import ConfigPanel from './panels/config.panel';
 import QueryPanel from './panels/query.panel';
 import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';

@@ -23,7 +23,7 @@ module.exports = {
 		// "./app/**/__tests__/**/*.test.ts",
 		// "./app/**/__tests__/**/*.test.tsx",
 	],
-	ignore: ['src/__tests__/*'],
+	ignore: ['src/extension/__tests__/*', 'src/extension/**/__tests__/*'],
 	require: ['ts-node/register'],
 	exit: true,
 	parallel: false,

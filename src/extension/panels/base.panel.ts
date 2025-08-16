@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { IMessagePayload, IPostMessage } from '../../shared/types';
-import Logger from '../logger';
+import { IMessagePayload, IPostMessage } from '../../../shared/types';
+import Logger from '../../logger';
 
 export default abstract class BasePanel {
 	protected _context: vscode.ExtensionContext;
