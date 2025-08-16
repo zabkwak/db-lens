@@ -19,7 +19,7 @@ export interface IFormContextState {
 export interface IFormActionPayload {
 	UPDATE_VALUE: {
 		name: string;
-		value: keyof IFormType;
+		value: TFormType;
 		required: boolean;
 	};
 	CLEAR_PROPERTY: {
