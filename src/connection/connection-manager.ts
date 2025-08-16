@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import assert from 'node:assert';
 import path from 'path';
 import * as vscode from 'vscode';
 import Config from '../config';
@@ -26,6 +27,19 @@ export default class ConnectionManager {
 				vscode.window.showErrorMessage(`Failed to load connections: ${error.message}`);
 			}
 		}
+	}
+
+	public static async addConnection(connection: Connection<any, any>): Promise<void> {
+		if (!this._connections) {
+			await this.load();
+		}
+		assert(this._connections, 'Connections should be loaded before adding a new one');
+		const existingConnection = this._connections.find((c) => c.getName() === connection.getName());
+		if (existingConnection) {
+			throw new Error(`Connection with name ${connection.getName()} already exists`);
+		}
+		this._connections.push(connection);
+		await this.save();
 	}
 
 	public static async save(): Promise<void> {

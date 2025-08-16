@@ -1,265 +1,228 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react';
-import React, { useEffect, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { driverOptions, drivers, passwordProviderOptions, passwordProviders } from '../../../shared/configuration';
-import { IConnectionConfiguration, IMessagePayload, IPostMessage } from '../../../shared/types';
-import { isCommand } from '../../../shared/utils';
+import { IConnectionConfiguration } from '../../../shared/types';
 import Alert from '../components/alert';
 import FormControl, { TType } from '../components/form-control';
 import FormGroup from '../components/form-group';
+import Form, { IFormData, IFormRef } from '../components/form/form';
 import Logger from '../logger';
+import Request from '../request';
 import { classNames } from '../utils';
-import { vscode } from '../vscode-api';
 import './config.scss';
 
 const Config: React.FC<IConnectionConfiguration> = (props) => {
-	const [isUpdate] = useState(!!props.name);
-	const [name, setName] = useState(props.name);
+	const [isUpdate, setIsUpdate] = useState(!!props.name);
 	const [isSSHTunnelEnabled] = useState(!!props.sshTunnelOptions);
-	const [sshTunnelHost, setSshTunnelHost] = useState(props.sshTunnelOptions?.host || '');
-	const [sshTunnelPort, setSshTunnelPort] = useState(props.sshTunnelOptions?.port || 22);
-	const [sshTunnelUsername, setSshTunnelUsername] = useState(props.sshTunnelOptions?.username || '');
-	const [sshTunnelPrivateKey, setSshTunnelPrivateKey] = useState(props.sshTunnelOptions?.privateKey || '');
-	const [sshTunnelPassphrase, setSshTunnelPassphrase] = useState(props.sshTunnelOptions?.passphrase || '');
-	const [localPort, setLocalPort] = useState(props.sshTunnelOptions?.localPort || 8080);
-	const [sshTunnelConnectionTimeout, setSshTunnelConnectionTimeout] = useState(
-		props.sshTunnelOptions?.connectionTimeout || 10000,
-	);
 	const [driver, setDriver] = useState<keyof typeof driverOptions>(props.db?.driver || drivers[0]);
 	const [passwordProvider, setPasswordProvider] = useState<keyof typeof passwordProviderOptions>(
 		props.db?.passwordProvider?.name || passwordProviders[0],
 	);
-	const [dbCredentials, setDbCredentials] = useState(props.db?.credentials || {});
-	const [passwordProviderConfig, setPasswordProviderConfig] = useState(props.db?.passwordProvider?.options || {});
 	const [isLoading, setIsLoading] = useState(false);
 	const [testConnectionSuccess, setTestConnectionSuccess] = useState<boolean | null>(null);
 
-	const handleMessage = (event: MessageEvent<IPostMessage<keyof IMessagePayload>>) => {
-		const message = event.data;
-		if (message.command === 'ready') {
-			return;
-		}
-		if (isCommand(message, 'testConnectionResult')) {
-			setIsLoading(false);
-			setTestConnectionSuccess(message.payload.success);
-		}
-	};
-	const handleDriverChange = (value: string) => {
+	function handleDriverChange(value: string) {
 		setDriver(value as keyof typeof driverOptions);
-		setDbCredentials({});
-	};
-	const handleDBCredentialsChange = (value: string | number | boolean, key: string | null) => {
-		if (!key) {
-			// shouldn't happen
-			return;
-		}
-		setDbCredentials({
-			...dbCredentials,
-			[key]: value,
-		});
-	};
-	const handlePasswordProviderChange = (value: string) => {
+		formRef.current?.clearProperty('dbCredentials');
+	}
+	function handlePasswordProviderChange(value: string) {
 		setPasswordProvider(value as keyof typeof passwordProviderOptions);
-		setPasswordProviderConfig({});
-	};
-	const handlePasswordProviderConfigChange = (value: string | number | boolean, key: string | null) => {
-		if (!key) {
-			// shouldn't happen
-			return;
-		}
-		setPasswordProviderConfig({
-			...passwordProviderConfig,
-			[key]: value,
-		});
-	};
-	const handleSave = () => {
-		setIsLoading(true);
-		vscode.postMessage({
-			command: 'saveConnection',
-			payload: {
-				name,
-				sshTunnelOptions: isSSHTunnelEnabled
-					? {
-							host: sshTunnelHost,
-							port: sshTunnelPort,
-							username: sshTunnelUsername,
-							privateKey: sshTunnelPrivateKey,
-							passphrase: sshTunnelPassphrase,
-							connectionTimeout: sshTunnelConnectionTimeout,
-							localPort,
-					  }
-					: undefined,
-				db: {
-					driver,
-					credentials: dbCredentials,
-					passwordProvider: {
-						name: passwordProvider,
-						options: passwordProviderConfig,
-					},
-				},
-			},
-		});
-	};
-	const handleTestConnection = () => {
+		formRef.current?.clearProperty('passwordProviderConfig');
+	}
+	function handleSave() {
+		formRef.current?.submit();
+	}
+	async function handleTestConnection() {
 		setIsLoading(true);
 		setTestConnectionSuccess(null);
-		vscode.postMessage({
-			command: 'testConnection',
-			payload: {
-				name,
-				sshTunnelOptions: isSSHTunnelEnabled
-					? {
-							host: sshTunnelHost,
-							port: sshTunnelPort,
-							username: sshTunnelUsername,
-							privateKey: sshTunnelPrivateKey,
-							passphrase: sshTunnelPassphrase,
-							connectionTimeout: sshTunnelConnectionTimeout,
-							localPort,
-					  }
-					: undefined,
-				db: {
-					driver,
-					credentials: dbCredentials,
-					passwordProvider: {
-						name: passwordProvider,
-						options: passwordProviderConfig,
+		if (!formRef.current?.isValid()) {
+			Logger.warn('Form is invalid');
+			return;
+		}
+		const data = formRef.current?.getData();
+		try {
+			const response = await Request.request<'testConnection', 'testConnectionResult'>(
+				'testConnection',
+				{
+					name: data.name as string,
+					sshTunnelOptions: isSSHTunnelEnabled
+						? (data.sshTunnel as IConnectionConfiguration['sshTunnelOptions'])
+						: undefined,
+					db: {
+						driver,
+						credentials: data.dbCredentials as Record<string, unknown>,
+						passwordProvider: {
+							name: passwordProvider,
+							options: data.passwordProviderConfig as Record<string, unknown>,
+						},
 					},
 				},
-			},
-		});
-	};
+				30000,
+			);
+			setTestConnectionSuccess(response.success);
+		} catch (error) {
+			Logger.error('Failed to test connection', { error });
+			setTestConnectionSuccess(false);
+		} finally {
+			setIsLoading(false);
+		}
+	}
+	async function handleSubmit(data: IFormData): Promise<void> {
+		setIsLoading(true);
+		try {
+			const response = await Request.request<'saveConnection', 'saveConnectionResult'>('saveConnection', {
+				name: data.name as string,
+				db: {
+					driver,
+					credentials: data.dbCredentials as Record<string, unknown>,
+					passwordProvider: {
+						name: passwordProvider,
+						options: data.passwordProviderConfig as Record<string, unknown>,
+					},
+				},
+			});
+			if (response.success) {
+				// TODO handle success
+				if (!isUpdate) {
+					setIsUpdate(true);
+				}
+			}
+		} catch (error) {
+			Logger.error('Failed to save connection', { error });
+		} finally {
+			setIsLoading(false);
+		}
+	}
 
-	useEffect(() => {
-		Logger.info('Received configuration data', props);
-		window.addEventListener('message', handleMessage);
-		return () => {
-			window.removeEventListener('message', handleMessage);
-		};
-	}, [props]);
+	const formRef = useRef<IFormRef>(null);
 
 	return (
 		<div className="config">
-			<div className="form">
-				<FormControl
-					type="text"
-					label="Connection name"
-					placeholder="Enter connection name"
-					value={name}
-					onChange={setName}
-					disabled={isUpdate || isLoading}
-					required
-				/>
-				<FormGroup label="Enable SSH Tunnel" visible={isSSHTunnelEnabled} disabled={isLoading}>
+			<Form ref={formRef} onSubmit={handleSubmit}>
+				<div className="form">
 					<FormControl
+						name="name"
 						type="text"
-						label="SSH Host"
-						placeholder="Enter SSH Host"
-						value={sshTunnelHost}
-						onChange={setSshTunnelHost}
-						disabled={isLoading}
+						label="Connection name"
+						placeholder="Enter connection name"
+						disabled={isUpdate || isLoading}
 						required
+						defaultValue={props.name}
 					/>
-					<FormControl
-						type="number"
-						label="SSH Port"
-						placeholder="Enter SSH Port"
-						value={sshTunnelPort}
-						onChange={setSshTunnelPort}
-						disabled={isLoading}
-						required
-					/>
-					<FormControl
-						type="text"
-						label="SSH Username"
-						placeholder="Enter SSH Username"
-						value={sshTunnelUsername}
-						onChange={setSshTunnelUsername}
-						disabled={isLoading}
-					/>
-					<FormControl
-						type="text"
-						label="Private Key Path"
-						placeholder="Enter Private Key Path"
-						value={sshTunnelPrivateKey}
-						onChange={setSshTunnelPrivateKey}
-						disabled={isLoading}
-					/>
-					<FormControl
-						type="text"
-						label="Passphrase (if required)"
-						placeholder="Enter Passphrase (if required)"
-						value={sshTunnelPassphrase}
-						onChange={setSshTunnelPassphrase}
-						disabled={isLoading}
-					/>
-					<FormControl
-						type="number"
-						label="Local Port"
-						placeholder="Enter local port"
-						value={localPort}
-						onChange={setLocalPort}
-						disabled={isLoading}
-					/>
-					<FormControl
-						type="number"
-						label="Connection Timeout (ms)"
-						placeholder="Enter Connection Timeout (ms)"
-						value={sshTunnelConnectionTimeout}
-						onChange={setSshTunnelConnectionTimeout}
-						disabled={isLoading}
-					/>
-				</FormGroup>
-				<FormControl
-					type="select"
-					label="Database Driver"
-					value={driver}
-					onChange={handleDriverChange}
-					options={Object.keys(driverOptions).map((driver) => ({
-						label: driver,
-						value: driver,
-					}))}
-					disabled={isLoading}
-				/>
-				<FormGroup hidable={false} disabled={isLoading}>
-					{driverOptions[driver]?.map((option) => (
+					<FormGroup label="Enable SSH Tunnel" visible={isSSHTunnelEnabled} disabled={isLoading}>
 						<FormControl
-							key={option.key}
-							name={option.key}
-							label={option.label}
-							type={option.type as TType}
-							placeholder={option.placeholder}
-							value={dbCredentials[option.key] ?? option.defaultValue}
-							onChange={handleDBCredentialsChange}
+							name="sshTunnel.host"
+							type="text"
+							label="SSH Host"
+							placeholder="Enter SSH Host"
 							disabled={isLoading}
+							required
+							defaultValue={props.sshTunnelOptions?.host || ''}
 						/>
-					))}
+						<FormControl
+							name="sshTunnel.port"
+							type="number"
+							label="SSH Port"
+							placeholder="Enter SSH Port"
+							disabled={isLoading}
+							required
+							defaultValue={props.sshTunnelOptions?.port || 22}
+						/>
+						<FormControl
+							name="sshTunnel.username"
+							type="text"
+							label="SSH Username"
+							placeholder="Enter SSH Username"
+							disabled={isLoading}
+							defaultValue={props.sshTunnelOptions?.username || ''}
+						/>
+						<FormControl
+							name="sshTunnel.privateKey"
+							type="text"
+							label="Private Key Path"
+							placeholder="Enter Private Key Path"
+							disabled={isLoading}
+							defaultValue={props.sshTunnelOptions?.privateKey || ''}
+						/>
+						<FormControl
+							name="sshTunnel.passphrase"
+							type="text"
+							label="Passphrase (if required)"
+							placeholder="Enter Passphrase (if required)"
+							disabled={isLoading}
+							defaultValue={props.sshTunnelOptions?.passphrase || ''}
+						/>
+						<FormControl
+							name="sshTunnel.localPort"
+							type="number"
+							label="Local Port"
+							placeholder="Enter local port"
+							disabled={isLoading}
+							defaultValue={props.sshTunnelOptions?.localPort ?? 8080}
+						/>
+						<FormControl
+							name="sshTunnel.connectionTimeout"
+							type="number"
+							label="Connection Timeout (ms)"
+							placeholder="Enter Connection Timeout (ms)"
+							disabled={isLoading}
+							defaultValue={props.sshTunnelOptions?.connectionTimeout ?? 10000}
+						/>
+					</FormGroup>
 					<FormControl
+						// name="driver"
 						type="select"
-						label="Password Provider"
-						value={passwordProvider}
-						onChange={handlePasswordProviderChange}
-						options={Object.keys(passwordProviderOptions).map((provider) => ({
-							label: provider,
-							value: provider,
+						label="Database Driver"
+						value={driver}
+						onChange={handleDriverChange}
+						options={Object.keys(driverOptions).map((driver) => ({
+							label: driver,
+							value: driver,
 						}))}
 						disabled={isLoading}
 					/>
 					<FormGroup hidable={false} disabled={isLoading}>
-						{passwordProviderOptions[passwordProvider]?.map((option) => (
+						{driverOptions[driver]?.map((option) => (
 							<FormControl
 								key={option.key}
-								name={option.key}
+								name={`dbCredentials.${option.key}`}
 								label={option.label}
 								type={option.type as TType}
 								placeholder={option.placeholder}
-								value={passwordProviderConfig[option.key] ?? option.defaultValue}
-								onChange={handlePasswordProviderConfigChange}
 								disabled={isLoading}
+								required={option.required}
+								defaultValue={props.db?.credentials[option.key] ?? option.defaultValue}
 							/>
 						))}
+						<FormControl
+							// name="passwordProvider"
+							type="select"
+							label="Password Provider"
+							value={passwordProvider}
+							onChange={handlePasswordProviderChange}
+							options={Object.keys(passwordProviderOptions).map((provider) => ({
+								label: provider,
+								value: provider,
+							}))}
+							disabled={isLoading}
+						/>
+						<FormGroup hidable={false} disabled={isLoading}>
+							{passwordProviderOptions[passwordProvider]?.map((option) => (
+								<FormControl
+									key={option.key}
+									name={`passwordProviderConfig.${option.key}`}
+									label={option.label}
+									type={option.type as TType}
+									placeholder={option.placeholder}
+									disabled={isLoading}
+									required={option.required}
+									defaultValue={props.db?.passwordProvider.options[option.key] ?? option.defaultValue}
+								/>
+							))}
+						</FormGroup>
 					</FormGroup>
-				</FormGroup>
-			</div>
+				</div>
+			</Form>
 			<div className="buttons">
 				<div className="left-group">
 					<VSCodeButton

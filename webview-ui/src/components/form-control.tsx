@@ -1,8 +1,10 @@
 import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption, VSCodeTextField } from '@vscode/webview-ui-toolkit/react';
-import { JSX, useId, useState } from 'react';
-import { IFormType } from '../../../shared/configuration';
+import { get } from 'lodash';
+import { JSX, useCallback, useContext, useEffect, useId } from 'react';
+import { IFormType, TFormType } from '../../../shared/configuration';
 import { classNames } from '../utils';
 import './form-control.scss';
+import FormContext from './form/context';
 
 interface ISelectOption {
 	label: string;
@@ -24,15 +26,16 @@ interface ITypeProps {
 }
 
 interface IProps<T extends keyof IFormType> {
+	type: T;
+	name?: string;
 	className?: string;
 	label?: string;
 	labelPosition?: 'left' | 'top' | 'right' | 'bottom';
 	required?: boolean;
-	type: T;
 	value?: IFormType[T];
 	onChange?: (value: IFormType[T], name: string | null) => void;
-	name?: string;
 	disabled?: boolean;
+	defaultValue?: IFormType[T];
 }
 
 export type TType = keyof IFormType;
@@ -46,32 +49,58 @@ function isType<K extends keyof IFormType>(
 
 const FormControl = <T extends keyof IFormType>(props: IProps<T> & ITypeProps[T]): JSX.Element => {
 	const uniqueId = useId();
-	const [error] = useState<string | undefined>(undefined);
+	const { state, dispatch } = useContext(FormContext);
 
-	const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (props.onChange) {
-			props.onChange(e.currentTarget.value as IFormType[T], props.name || null);
+	const dispatchValue = useCallback(
+		(value: IFormType[T]) => {
+			if (props.onChange) {
+				props.onChange(value, props.name || null);
+				return;
+			}
+			if (!props.name) {
+				return;
+			}
+			dispatch({
+				type: 'UPDATE_VALUE',
+				payload: {
+					name: props.name,
+					// @ts-expect-error TODO figure out typings
+					value,
+					required: props.required ?? false,
+				},
+			});
+		},
+		[dispatch, props],
+	);
+	useEffect(() => {
+		dispatchValue((props.defaultValue ?? props.value) as IFormType[T]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.defaultValue, props.value]);
+
+	const getValue = <U extends TFormType>(): U | undefined => {
+		if (!props.name) {
+			return props.value as unknown as U;
 		}
+		return get(state.formData, props.name.split('.'))?.value ?? (props.value as unknown as U);
+	};
+	const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		dispatchValue(e.currentTarget.value as IFormType[T]);
 	};
 	const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		if (props.onChange) {
-			props.onChange(e.currentTarget.checked as IFormType[T], props.name || null);
-		}
+		dispatchValue(e.currentTarget.checked as IFormType[T]);
 	};
 	const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = Number(e.currentTarget.value);
 		if (isNaN(value)) {
 			return;
 		}
-		if (props.onChange) {
-			props.onChange(value as IFormType[T], props.name || null);
-		}
+		dispatchValue(value as IFormType[T]);
 	};
 	const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		if (props.onChange) {
-			props.onChange(e.currentTarget.value as IFormType[T], props.name || null);
-		}
+		dispatchValue(e.currentTarget.value as IFormType[T]);
 	};
+
+	const error = props.name ? state.errors[props.name] : undefined;
 
 	return (
 		<div className={classNames('form-control', `${props.labelPosition || 'top'}-label`, props.className)}>
@@ -87,11 +116,11 @@ const FormControl = <T extends keyof IFormType>(props: IProps<T> & ITypeProps[T]
 					className="control text-field"
 					name={props.name}
 					placeholder={props.placeholder}
-					value={props.value ?? ''}
+					value={getValue() ?? ''}
 					// @ts-expect-error some weird typings
 					onInput={handleTextFieldChange}
 					required={props.required}
-					disabled={props.disabled}
+					disabled={state.loading || props.disabled}
 				/>
 			) : null}
 			{isType(props, 'number') ? (
@@ -100,22 +129,22 @@ const FormControl = <T extends keyof IFormType>(props: IProps<T> & ITypeProps[T]
 					className="control text-field"
 					name={props.name}
 					placeholder={props.placeholder}
-					value={(props.value ?? '').toString()}
+					value={(getValue() ?? '').toString()}
 					// @ts-expect-error some weird typings
 					onInput={handleNumberChange}
 					required={props.required}
-					disabled={props.disabled}
+					disabled={state.loading || props.disabled}
 				/>
 			) : null}
 			{isType(props, 'checkbox') ? (
 				<VSCodeCheckbox
 					id={uniqueId}
 					className="control checkbox"
-					checked={props.value ?? false}
+					checked={getValue() ?? false}
 					// @ts-expect-error some weird typings
 					onChange={handleCheckboxChange}
 					required={props.required}
-					disabled={props.disabled}
+					disabled={state.loading || props.disabled}
 				/>
 			) : null}
 			{isType(props, 'select') ? (
@@ -125,8 +154,8 @@ const FormControl = <T extends keyof IFormType>(props: IProps<T> & ITypeProps[T]
 					name={props.name}
 					// @ts-expect-error some weird typings
 					onChange={handleSelectChange}
-					value={props.value}
-					disabled={props.disabled}
+					value={getValue()}
+					disabled={state.loading || props.disabled}
 				>
 					{props.options.map(({ label, value }) => (
 						<VSCodeOption key={value} value={value}>

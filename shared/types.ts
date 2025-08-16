@@ -1,6 +1,7 @@
 export interface IPostMessage<T extends keyof IMessagePayload> {
 	command: T;
 	payload: IMessagePayload[T];
+	requestId?: string;
 }
 
 export interface IMessagePayload {
@@ -25,6 +26,10 @@ export interface IMessagePayload {
 		message?: string;
 	};
 	saveConnection: IConnectionConfiguration;
+	saveConnectionResult: {
+		success: boolean;
+		message?: string;
+	};
 }
 
 export interface IColumn {
