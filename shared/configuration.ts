@@ -5,12 +5,15 @@ export interface IFormType {
 	select: string;
 }
 
+export type TFormType = IFormType[keyof IFormType];
+
 export interface IFormDefinition<T extends keyof IFormType = keyof IFormType> {
 	key: string;
 	label: string;
 	type: T;
 	placeholder?: string;
 	defaultValue?: IFormType[T];
+	required?: boolean;
 }
 
 export const drivers: (keyof typeof driverOptions)[] = ['postgres', 'mysql', 'sqlite'];
@@ -23,6 +26,7 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			type: 'text',
 			placeholder: 'Enter Host',
 			defaultValue: 'localhost',
+			required: true,
 		},
 		{
 			key: 'port',
@@ -30,6 +34,7 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			type: 'number',
 			placeholder: 'Enter Port',
 			defaultValue: 5432,
+			required: true,
 		},
 		{
 			key: 'username',
@@ -37,6 +42,7 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			type: 'text',
 			placeholder: 'Enter Username',
 			defaultValue: '',
+			required: true,
 		},
 		{
 			key: 'database',
@@ -44,6 +50,7 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			type: 'text',
 			placeholder: 'Enter Database Name',
 			defaultValue: '',
+			required: true,
 		},
 		{
 			key: 'sslRejectUnauthorized',
@@ -72,30 +79,35 @@ export const passwordProviderOptions: Record<string, IFormDefinition[]> = {
 			label: 'Host',
 			type: 'text',
 			placeholder: 'Enter database host',
+			required: true,
 		},
 		{
 			key: 'port',
 			label: 'Port',
 			type: 'number',
 			placeholder: 'Enter database port',
+			required: true,
 		},
 		{
 			key: 'username',
 			label: 'Username',
 			type: 'text',
 			placeholder: 'Enter AWS IAM username',
+			required: true,
 		},
 		{
 			key: 'region',
 			label: 'Region',
 			type: 'text',
 			placeholder: 'Enter AWS region',
+			required: true,
 		},
 		{
 			key: 'profile',
 			label: 'Profile',
 			type: 'text',
 			placeholder: 'Enter aws profile name',
+			required: true,
 		},
 	],
 };

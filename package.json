@@ -45,6 +45,11 @@
 				"command": "db-lens.copyToQueryView",
 				"title": "Use in DB Lens",
 				"icon": "$(copy)"
+			},
+			{
+				"command": "db-lens.addConnection",
+				"title": "Add New Connection",
+				"icon": "$(add)"
 			}
 		],
 		"viewsContainers": {
@@ -93,6 +98,12 @@
 					"when": "view == dbLensSidebar && viewItem == connection.connected",
 					"group": "inline"
 				}
+			],
+			"view/title": [
+				{
+					"command": "db-lens.addConnection",
+					"group": "navigation"
+				}
 			]
 		},
 		"configuration": {
@@ -123,6 +134,7 @@
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.20",
+		"@types/chai-as-promised": "^7.1.8",
 		"@types/mocha": "^10.0.10",
 		"@types/mock-require": "^3.0.0",
 		"@types/node": "^20.19.9",
@@ -134,6 +146,7 @@
 		"@vscode/test-cli": "^0.0.10",
 		"@vscode/test-electron": "^2.4.1",
 		"chai": "^4.5.0",
+		"chai-as-promised": "^7.1.2",
 		"esbuild": "^0.24.0",
 		"eslint": "^9.11.1",
 		"mocha": "^11.7.1",

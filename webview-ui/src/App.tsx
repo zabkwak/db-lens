@@ -4,6 +4,7 @@ import './App.css';
 import Loader from './components/loader';
 import Config from './pages/config';
 import QueryEditor from './pages/query-editor';
+import Request from './request';
 import { vscode } from './vscode-api';
 
 const isCommand = <T extends keyof IMessagePayload>(
@@ -19,6 +20,7 @@ const App: React.FC = () => {
 
 	const handleMessage = (event: MessageEvent<IPostMessage<keyof IMessagePayload>>) => {
 		const message = event.data;
+		Request.handleMessage(message);
 		if (isCommand(message, 'navigation')) {
 			setRoute(message.payload.route);
 			if (message.payload.data) {

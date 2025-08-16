@@ -43,4 +43,10 @@
 			width: 100%;
 		}
 	}
+
+	& > .error {
+		color: red;
+		font-size: var(--type-ramp-base-font-size);
+		line-height: var(--type-ramp-base-line-height);
+	}
 }
