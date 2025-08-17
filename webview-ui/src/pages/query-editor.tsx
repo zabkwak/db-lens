@@ -1,9 +1,7 @@
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
-import React, { useEffect, useState } from 'react';
-import { IMessagePayload, IPostMessage } from '../../../shared/types';
-import { isCommand } from '../../../shared/utils';
+import React, { useState } from 'react';
+import { IMessagePayload } from '../../../shared/types';
 import Table from '../components/table';
-import Logger from '../logger';
 import Request from '../request';
 import { TState } from '../types';
 import { vscode } from '../vscode-api';
@@ -13,23 +11,11 @@ const QueryEditor: React.FC = () => {
 	const [query, setQuery] = useState("SELECT * FROM terminal where account_id = 'gi6d'");
 	const [result, setResult] = useState<TState<IMessagePayload['query.result']['data']>>(null);
 	const [isLoading, setIsLoading] = useState(false);
-	const handleMessage = (event: MessageEvent<IPostMessage<keyof IMessagePayload>>) => {
-		const message = event.data;
-		Logger.info('Received message from VS Code', { command: message.command });
-		if (isCommand(message, 'query.result')) {
-			const { payload } = message;
-			setIsLoading(false);
-			if (!payload.success) {
-				return;
-			}
-			setResult(payload.data);
-			return;
-		}
-	};
 	async function handleRunQuery(): Promise<void> {
 		setIsLoading(true);
 		try {
-			await Request.request('query', { query }, 30000);
+			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000);
+			setResult(result.data);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
 			vscode.postMessage({
@@ -49,13 +35,6 @@ const QueryEditor: React.FC = () => {
 			handleRunQuery();
 		}
 	};
-
-	useEffect(() => {
-		window.addEventListener('message', handleMessage);
-		return () => {
-			window.removeEventListener('message', handleMessage);
-		};
-	}, []);
 
 	return (
 		<div className="query-editor">

@@ -12,6 +12,13 @@ export interface IResult<T> {
 	data?: T;
 }
 
+export enum EQueryCommand {
+	UPDATE = 'update',
+	SELECT = 'select',
+	INSERT = 'insert',
+	DELETE = 'DELETE',
+}
+
 export interface IMessagePayload {
 	query: {
 		query: string;
@@ -19,6 +26,8 @@ export interface IMessagePayload {
 	'query.result': IResult<{
 		data: any[];
 		columns: IColumn[];
+		rowCount: number | null;
+		command: EQueryCommand;
 	}>;
 	log: {
 		level: 'info' | 'warn' | 'error';

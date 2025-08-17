@@ -1,3 +1,4 @@
+import { EQueryCommand } from '../../shared/types';
 import BasePasswordProvider from '../password-providers/base';
 
 export interface ICollectionPropertyDescription {
@@ -9,6 +10,8 @@ export interface ICollectionPropertyDescription {
 export interface IQueryResultWithDescription<T> {
 	data: T[];
 	properties: ICollectionPropertyDescription[];
+	rowCount: number | null;
+	command: EQueryCommand;
 }
 
 export default abstract class BaseDriver<T, U> {

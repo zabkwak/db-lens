@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import types from 'pg-types';
+import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import Password from '../password-providers/password';
 import BaseDriver, { ICollectionPropertyDescription, IQueryResultWithDescription } from './base';
@@ -81,7 +82,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		const start = Date.now();
 		Logger.info('query', `Executing query with description: ${query} with params: ${JSON.stringify(params)}`);
 		try {
-			const { rows, fields } = await this._pool.query(query, params);
+			const { rows, fields, rowCount, command } = await this._pool.query(query, params);
 			const duration = Date.now() - start;
 			Logger.info('query', `Executed query with description: ${query} in ${duration}ms`);
 			const properties = fields.map((field) => {
@@ -92,7 +93,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 					type: typeName,
 				};
 			});
-			return { data: rows as T[], properties };
+			return { data: rows as T[], properties, rowCount, command: this._getCommand(command) };
 		} catch (error: any) {
 			Logger.error('query', `Error executing query with description: ${query} - ${error}`, {
 				error: {
@@ -119,5 +120,20 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		this._pool.on('connect', (client) => {
 			client.query(`SET search_path TO ${schema}`);
 		});
+	}
+
+	private _getCommand(command: string): EQueryCommand {
+		switch (command) {
+			case 'UPDATE':
+				return EQueryCommand.UPDATE;
+			case 'INSERT':
+				return EQueryCommand.INSERT;
+			case 'DELETE':
+				return EQueryCommand.DELETE;
+			case 'SELECT':
+				return EQueryCommand.SELECT;
+			default:
+				throw new Error(`Unknown command: ${command}`);
+		}
 	}
 }
