@@ -271,6 +271,104 @@ describe('ConnectionManager', () => {
 		});
 	});
 
+	describe('.updateConnection', () => {
+		it('should update existing connection', async () => {
+			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
+			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
+			const connection = await Connection.create('Test Connection', {
+				db: {
+					driver: 'postgres',
+					credentials: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						database: 'postgres',
+						schema: 'public',
+						sslRejectUnauthorized: false,
+					},
+				},
+				passwordProvider: {
+					type: 'aws-rds-token',
+					config: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						region: 'us-east-1',
+						profile: 'some-profile',
+					},
+				},
+				sshTunnelOptions: {
+					host: 'bastion',
+					port: 22,
+					username: 'ec2-user',
+					privateKey: '/path/to/private/key',
+					passphrase: null,
+					localPort: 5432,
+					localHost: 'localhost',
+					connectionTimeout: 10000,
+				},
+			});
+			await ConnectionManager.updateConnection(connection);
+			expect(ConnectionManager.getConnections()).to.have.length(1);
+			expect(ConnectionManager.getConnections()?.[0]).to.deep.equal(connection);
+			expect(writeFileStub.calledOnce).to.be.true;
+			const [filePath, fileContent, encoding] = writeFileStub.firstCall.args;
+			expect(filePath).to.equal(path.join(__dirname, './fixtures/.db-lens/connections.json'));
+			expect(fileContent).to.be.equal(
+				JSON.stringify(
+					{
+						'Test Connection': connection.getConnection(),
+					},
+					null,
+					4,
+				),
+			);
+			expect(encoding).to.equal('utf-8');
+		});
+
+		it("should throw an error if the connection doesn't exist", async () => {
+			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
+			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
+			const connection = await Connection.create('Non Existent Connection', {
+				db: {
+					driver: 'postgres',
+					credentials: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						database: 'postgres',
+						schema: 'public',
+						sslRejectUnauthorized: false,
+					},
+				},
+				passwordProvider: {
+					type: 'aws-rds-token',
+					config: {
+						host: 'some.host',
+						port: 5432,
+						username: 'some.user',
+						region: 'us-east-1',
+						profile: 'some-profile',
+					},
+				},
+				sshTunnelOptions: {
+					host: 'bastion',
+					port: 22,
+					username: 'ec2-user',
+					privateKey: '/path/to/private/key',
+					passphrase: null,
+					localPort: 5432,
+					localHost: 'localhost',
+					connectionTimeout: 10000,
+				},
+			});
+			await expect(ConnectionManager.updateConnection(connection)).to.be.rejectedWith(
+				Error,
+				'Connection with name Non Existent Connection does not exist',
+			);
+		});
+	});
+
 	describe('.deleteConnection', () => {
 		it('should delete the existing connection', async () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));

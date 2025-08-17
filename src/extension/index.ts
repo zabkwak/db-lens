@@ -8,6 +8,7 @@ import ConfigPanel from './panels/config.panel';
 import QueryPanel from './panels/query.panel';
 import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';
 import ConnectionTreeItem from './providers/tree-items/connection.tree-item';
+import { confirmWarningDialog } from './utils';
 import ViewManager from './view-manager';
 
 // This method is called when your extension is activated
@@ -35,12 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
 			new ConfigPanel(context).show();
 		}),
 		vscode.commands.registerCommand('db-lens.removeConnection', async (item: ConnectionTreeItem<any, any>) => {
-			const result = await vscode.window.showWarningMessage(
-				'Are you sure you want to delete this connection?',
-				{ modal: true },
-				'Delete',
-			);
-			if (result === 'Delete') {
+			if (await confirmWarningDialog('Are you sure you want to delete this connection?', 'Delete')) {
 				await ConnectionManager.deleteConnection(item.getConnection());
 				ViewManager.getConnectionTreeProvider().refresh();
 			}
