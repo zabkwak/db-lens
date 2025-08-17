@@ -30,6 +30,9 @@ export default class ConnectionTreeItem<
 		if (this.contextValue === EConnectionContextValue.CONNECTING) {
 			return new vscode.ThemeIcon('loading~spin');
 		}
+		if (this.contextValue === EConnectionContextValue.CONNECTED) {
+			return new vscode.ThemeIcon('database', new vscode.ThemeColor('charts.green'));
+		}
 		return new vscode.ThemeIcon('database');
 	}
 
