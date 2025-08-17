@@ -5,7 +5,7 @@ import { showInfo } from '../utils';
 import TreeItem from './tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import LoadingTreeItem from './tree-items/loading.tree-item';
-import WarningTreeItem from './tree-items/warning.tree-item copy';
+import WarningTreeItem from './tree-items/warning.tree-item';
 
 export default class ConnectionTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 	private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined>();
