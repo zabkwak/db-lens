@@ -9,6 +9,7 @@ interface IProps {
 	visible?: boolean;
 	hidable?: boolean;
 	disabled?: boolean;
+	onChange?: (visible: boolean) => void;
 }
 
 const FormGroup = ({
@@ -18,15 +19,22 @@ const FormGroup = ({
 	hidable = true,
 	disabled = false,
 	children,
+	onChange,
 }: PropsWithChildren<IProps>): JSX.Element => {
 	const [isVisible, setVisible] = useState(!hidable ? true : visible || false);
+	function handleOnChange(visible: boolean) {
+		setVisible(visible);
+		if (onChange) {
+			onChange(visible);
+		}
+	}
 	return (
 		<div className={classNames('form-group', className)}>
 			{label ? (
 				<FormControl
 					label={label}
 					type="checkbox"
-					onChange={setVisible}
+					onChange={handleOnChange}
 					value={isVisible}
 					labelPosition="right"
 					disabled={disabled}

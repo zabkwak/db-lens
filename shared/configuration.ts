@@ -110,4 +110,27 @@ export const passwordProviderOptions: Record<string, IFormDefinition[]> = {
 			required: true,
 		},
 	],
+	'aws-ssm': [
+		{
+			key: 'name',
+			label: 'Name',
+			type: 'text',
+			placeholder: 'Enter parameter name',
+			required: true,
+		},
+		{
+			key: 'region',
+			label: 'Region',
+			type: 'text',
+			placeholder: 'Enter AWS region',
+			required: true,
+		},
+		{
+			key: 'profile',
+			label: 'Profile',
+			type: 'text',
+			placeholder: 'Enter aws profile name',
+			required: true,
+		},
+	],
 };

@@ -13,7 +13,7 @@ import './config.scss';
 
 const Config: React.FC<IConnectionConfiguration> = (props) => {
 	const [isUpdate, setIsUpdate] = useState(!!props.name);
-	const [isSSHTunnelEnabled] = useState(!!props.sshTunnelOptions);
+	const [isSSHTunnelEnabled, setSSHTunnelEnabled] = useState(!!props.sshTunnelOptions);
 	const [driver, setDriver] = useState<keyof typeof driverOptions>(props.db?.driver || drivers[0]);
 	const [passwordProvider, setPasswordProvider] = useState<keyof typeof passwordProviderOptions>(
 		props.db?.passwordProvider?.name || passwordProviders[0],
@@ -112,7 +112,12 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 						required
 						defaultValue={props.name}
 					/>
-					<FormGroup label="Enable SSH Tunnel" visible={isSSHTunnelEnabled} disabled={isLoading}>
+					<FormGroup
+						label="Enable SSH Tunnel"
+						visible={isSSHTunnelEnabled}
+						disabled={isLoading}
+						onChange={setSSHTunnelEnabled}
+					>
 						<FormControl
 							name="sshTunnel.host"
 							type="text"
