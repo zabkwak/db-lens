@@ -50,7 +50,11 @@ export default class ConnectionManager {
 		const index = this._connections.findIndex((c) => c.getName() === connection.getName());
 		if (index === -1) {
 			throw new Error(`Connection with name ${connection.getName()} does not exist`);
+		const existingConnection = this._connections.find((c) => c.getName() === connection.getName());
+		if (!existingConnection) {
+			throw new Error(`Connection with name ${connection.getName()} does not exist`);
 		}
+		const index = this._connections.indexOf(existingConnection);
 		this._connections[index] = connection;
 		await this._save();
 	}
