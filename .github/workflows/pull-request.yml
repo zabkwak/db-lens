@@ -17,3 +17,16 @@ jobs:
             - name: Run tests
               shell: bash
               run: npm test
+
+    test-webview:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              working-directory: webview-ui
+              shell: bash
+              run: npm install
+            - name: Run tests
+              working-directory: webview-ui
+              shell: bash
+              run: npm test
