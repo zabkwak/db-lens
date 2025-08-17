@@ -24,11 +24,11 @@ export enum EState {
 }
 
 export default class Connection<T extends keyof typeof drivers, U extends keyof typeof passwordProviders> {
+	// TODO remove this?
 	public static async create<T extends keyof typeof drivers, U extends keyof typeof passwordProviders>(
 		name: string,
 		connection: IConnection<T, U>,
 	): Promise<Connection<T, U>> {
-		// TODO random port for ssh tunnel
 		return new Connection(name, connection);
 	}
 
@@ -62,10 +62,11 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 			this._driver = new Driver(
 				{
 					...connection.db.credentials,
-					host: this._sshTunnel.getLocalHost(),
-					port: this._sshTunnel.getLocalPort(),
+					host: null,
+					port: null,
 				},
 				new PasswordProvider(connection.passwordProvider.config),
+				this._sshTunnel,
 			);
 		} else {
 			this._driver = new Driver(

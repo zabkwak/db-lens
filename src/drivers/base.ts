@@ -1,4 +1,5 @@
 import { EQueryCommand } from '../../shared/types';
+import SSHTunnel from '../connection/ssh-tunnel';
 import BasePasswordProvider from '../password-providers/base';
 
 export interface ICollectionPropertyDescription {
@@ -16,10 +17,17 @@ export interface IQueryResultWithDescription<T> {
 
 export default abstract class BaseDriver<T, U> {
 	protected _credentials: T;
+
 	protected _passwordProvider: BasePasswordProvider<U>;
-	constructor(credentials: T, passwordProvider: BasePasswordProvider<U>) {
+
+	protected _sshTunnel: SSHTunnel | null = null;
+
+	constructor(credentials: T, passwordProvider: BasePasswordProvider<U>);
+	constructor(credentials: T, passwordProvider: BasePasswordProvider<U>, sshTunnel: SSHTunnel);
+	constructor(credentials: T, passwordProvider: BasePasswordProvider<U>, sshTunnel: SSHTunnel | null = null) {
 		this._credentials = credentials;
 		this._passwordProvider = passwordProvider;
+		this._sshTunnel = sshTunnel;
 	}
 
 	public abstract connect(): Promise<void>;

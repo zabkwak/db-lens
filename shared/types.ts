@@ -87,7 +87,7 @@ export interface ISSHTunnelConfiguration {
 	 * The local port to forward.
 	 * @default 8080
 	 */
-	localPort: number;
+	localPort: number | null;
 	/**
 	 * The local host to bind the port to.
 	 * @default "localhost"

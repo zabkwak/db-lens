@@ -1,7 +1,9 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import net from 'net';
+import assert from 'node:assert';
 import os from 'os';
 import { ISSHTunnelConfiguration } from '../../shared/types';
+import Config from '../config';
 import Logger from '../logger';
 import { sleep } from '../utils/utils';
 import PortManager from './port-manager';
@@ -24,6 +26,10 @@ export default class SSHTunnel {
 
 	private _sshTunnelProcess: ChildProcessWithoutNullStreams | null = null;
 
+	private _randomPort: number | null = null;
+
+	private _opened: boolean = false;
+
 	constructor(config: Partial<ISSHTunnelOptions>) {
 		this._config = {
 			host: config.host || 'localhost',
@@ -31,7 +37,7 @@ export default class SSHTunnel {
 			username: config.username || os.userInfo().username,
 			privateKey: config.privateKey || '',
 			passphrase: config.passphrase || null,
-			localPort: config.localPort || 8080,
+			localPort: config.localPort || null,
 			localHost: config.localHost || 'localhost',
 			remotePort: config.remotePort || 8080,
 			remoteHost: config.remoteHost || 'localhost',
@@ -44,12 +50,20 @@ export default class SSHTunnel {
 			Logger.info('ssh-tunnel', 'SSH Tunnel already started');
 			return;
 		}
+		if (!this._config.localPort) {
+			Logger.info('ssh-tunnel', 'No local port specified, searching for random port');
+			const [min, max] = Config.getPortRange();
+			this._randomPort = await PortManager.getAvailablePort(min, max, this._config.localHost);
+			Logger.info('ssh-tunnel', `Using random local port ${this._randomPort}`);
+		}
 		Logger.info(
 			'ssh-tunnel',
-			`Opening SSH Tunnel ${this._config.localHost}:${this._config.localPort} -> ${this._config.remoteHost}:${this._config.remotePort}`,
+			`Opening SSH Tunnel ${this._config.localHost}:${this.getLocalPort()} -> ${this._config.remoteHost}:${
+				this._config.remotePort
+			}`,
 		);
-		if (!(await PortManager.isPortAvailable(this._config.localPort, this._config.localHost))) {
-			throw new Error(`Local port ${this._config.localPort} is already in use`);
+		if (!(await PortManager.isPortAvailable(this.getLocalPort(), this._config.localHost))) {
+			throw new Error(`Local port ${this.getLocalPort()} is already in use`);
 		}
 		const { ssh, args } = this._constructCommand();
 		this._sshTunnelProcess = spawn(ssh, args, { shell: true });
@@ -64,6 +78,7 @@ export default class SSHTunnel {
 			Logger.info('ssh-tunnel', `child process exited with code ${code}`);
 		});
 		await this._checkConnection();
+		this._opened = true;
 	}
 
 	public async close(): Promise<void> {
@@ -74,10 +89,11 @@ export default class SSHTunnel {
 		Logger.info('ssh-tunnel', 'Closing SSH Tunnel');
 		this._sshTunnelProcess.kill();
 		this._sshTunnelProcess = null;
+		this._opened = false;
 	}
 
 	public isOpen(): boolean {
-		return !!this._sshTunnelProcess && this._sshTunnelProcess.killed === false;
+		return !!this._sshTunnelProcess && this._sshTunnelProcess.killed === false && this._opened;
 	}
 
 	public getConfig(): ISSHTunnelOptions {
@@ -93,7 +109,8 @@ export default class SSHTunnel {
 	}
 
 	public getLocalPort(): number {
-		return this._config.localPort;
+		assert(this._randomPort || this._config.localPort, 'Local port is not set');
+		return (this._randomPort || this._config.localPort) as number;
 	}
 
 	private async _checkConnection(): Promise<void> {
@@ -115,8 +132,7 @@ export default class SSHTunnel {
 	}
 
 	private _constructCommand(): { ssh: string; args: string[] } {
-		const { host, port, username, privateKey, passphrase, localPort, localHost, remotePort, remoteHost } =
-			this._config;
+		const { host, port, username, privateKey, passphrase, localHost, remotePort, remoteHost } = this._config;
 		const args = [
 			// Use the private key if provided
 			privateKey ? '-i' : null,
@@ -125,7 +141,7 @@ export default class SSHTunnel {
 			'-N',
 			// Local port forwarding
 			'-L',
-			`${localHost}:${localPort}:${remoteHost}:${remotePort}`,
+			`${localHost}:${this.getLocalPort()}:${remoteHost}:${remotePort}`,
 			`${username}@${host}`,
 			'-p',
 			`${port}`,
@@ -148,11 +164,11 @@ export default class SSHTunnel {
 
 	private _tryConnect(timeout: number): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const { localHost, localPort } = this._config;
+			const { localHost } = this._config;
 			const socket = new net.Socket();
 			const t = setTimeout(() => {
 				socket.destroy();
-				reject(new Error(`Connection to ${localHost}:${localPort} timed out`));
+				reject(new Error(`Connection to ${localHost}:${this.getLocalPort()} timed out`));
 			}, timeout);
 			socket
 				.on('error', (error) => {
@@ -169,7 +185,7 @@ export default class SSHTunnel {
 					clearTimeout(t);
 					reject(new Error('Socket closed before data received'));
 				});
-			socket.connect({ host: localHost, port: localPort });
+			socket.connect({ host: localHost, port: this.getLocalPort() });
 		});
 	}
 }
