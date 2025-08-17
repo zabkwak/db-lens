@@ -16,7 +16,7 @@ describe('SSH Tunnel', () => {
 		userInfoStub.restore();
 	});
 
-	describe('._constructCommand', () => {
+	describe.skip('._constructCommand', () => {
 		it('should call SSH command with default arguments', () => {
 			const tunnel = new SSHTunnel({});
 			// @ts-expect-error

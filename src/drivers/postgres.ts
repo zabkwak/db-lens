@@ -22,7 +22,6 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		if (this._pool) {
 			return;
 		}
-		Logger.info('postgres', `Connecting to PostgreSQL at ${this._credentials.host}:${this._credentials.port}`);
 		await this._connect();
 		Logger.info('postgres', 'Connected to PostgreSQL');
 	}
@@ -32,7 +31,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			throw new Error('Database not connected');
 		}
 		await this._pool.end();
-		Logger.info('postgres', `Reconnecting to PostgreSQL at ${this._credentials.host}:${this._credentials.port}`);
+		Logger.info('postgres', `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
 		await this._connect();
 	}
 
@@ -107,9 +106,15 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 
 	private async _connect(): Promise<void> {
 		this._password = await this._passwordProvider.getPassword();
+		if (this._sshTunnel && !this._sshTunnel.isOpen()) {
+			throw new Error('SSH tunnel is not open');
+		}
+		const host = this._getHost();
+		const port = this._getPort();
+		Logger.info('postgres', `Connecting to PostgreSQL at ${host}:${port}`);
 		this._pool = new Pool({
-			host: this._credentials.host,
-			port: this._credentials.port,
+			host,
+			port,
 			user: this._credentials.username,
 			password: this._password.password,
 			database: this._credentials.database,
@@ -135,5 +140,13 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			default:
 				throw new Error(`Unknown command: ${command}`);
 		}
+	}
+
+	private _getHost(): string {
+		return (this._sshTunnel?.getLocalHost() ?? this._credentials.host) as string;
+	}
+
+	private _getPort(): number {
+		return (this._sshTunnel?.getLocalPort() ?? this._credentials.port) as number;
 	}
 }

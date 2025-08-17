@@ -123,6 +123,20 @@
 					"title": "Base Directory",
 					"type": "string",
 					"description": "The base directory for DB Lens."
+				},
+				"db-lens.portRange": {
+					"title": "Port Range",
+					"type": "array",
+					"minItems": 2,
+					"maxItems": 2,
+					"items": {
+						"type": "integer"
+					},
+					"description": "Local port range for SSH tunnels in DB Lens.",
+					"default": [
+						49152,
+						65535
+					]
 				}
 			}
 		}

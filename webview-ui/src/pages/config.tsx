@@ -72,6 +72,9 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 		try {
 			const response = await Request.request<'saveConnection', 'saveConnectionResult'>('saveConnection', {
 				name: data.name as string,
+				sshTunnelOptions: isSSHTunnelEnabled
+					? (data.sshTunnel as IConnectionConfiguration['sshTunnelOptions'])
+					: undefined,
 				db: {
 					driver,
 					credentials: data.dbCredentials as Record<string, unknown>,
@@ -154,11 +157,11 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 						/>
 						<FormControl
 							name="sshTunnel.localPort"
-							type="number"
+							type="text"
 							label="Local Port"
 							placeholder="Enter local port"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.localPort ?? 8080}
+							defaultValue={props.sshTunnelOptions?.localPort?.toString() ?? ''}
 						/>
 						<FormControl
 							name="sshTunnel.connectionTimeout"
