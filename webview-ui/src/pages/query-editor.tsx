@@ -1,38 +1,45 @@
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
 import React, { useEffect, useState } from 'react';
 import { IMessagePayload, IPostMessage } from '../../../shared/types';
+import { isCommand } from '../../../shared/utils';
 import Table from '../components/table';
 import Logger from '../logger';
+import Request from '../request';
 import { TState } from '../types';
-import { isCommand } from '../utils';
 import { vscode } from '../vscode-api';
 import './query-editor.scss';
 
 const QueryEditor: React.FC = () => {
 	const [query, setQuery] = useState("SELECT * FROM terminal where account_id = 'gi6d'");
-	const [result, setResult] = useState<TState<IMessagePayload['result']>>(null);
+	const [result, setResult] = useState<TState<IMessagePayload['query.result']['data']>>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const handleMessage = (event: MessageEvent<IPostMessage<keyof IMessagePayload>>) => {
 		const message = event.data;
 		Logger.info('Received message from VS Code', { command: message.command });
-		if (isCommand(message, 'result')) {
-			setResult(message.payload);
+		if (isCommand(message, 'query.result')) {
+			const { payload } = message;
 			setIsLoading(false);
+			if (!payload.success) {
+				return;
+			}
+			setResult(payload.data);
 			return;
 		}
-		// if (message.command === 'error') {
-		// 	setResult(null);
-		// 	setIsLoading(false);
-		// 	return;
-		// }
 	};
-	const handleRunQuery = () => {
+	async function handleRunQuery(): Promise<void> {
 		setIsLoading(true);
-		vscode.postMessage({
-			command: 'query',
-			payload: query,
-		});
-	};
+		try {
+			await Request.request('query', { query }, 30000);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		} catch (error: any) {
+			vscode.postMessage({
+				command: 'error',
+				payload: { message: error.message },
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	}
 	const handleQueryChange = (e: React.FormEvent<HTMLTextAreaElement>) => {
 		setQuery(e.currentTarget.value);
 	};

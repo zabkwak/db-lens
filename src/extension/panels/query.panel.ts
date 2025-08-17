@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { IPostMessage } from '../../../shared/types';
+import { isCommand } from '../../../shared/utils';
 import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
+import { showError } from '../utils';
 import BasePanel from './base.panel';
 
 export default class QueryPanel extends BasePanel {
@@ -12,14 +14,23 @@ export default class QueryPanel extends BasePanel {
 	}
 
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
-		switch (message.command) {
-			case 'query':
-				const { data, properties } = await this._item.getConnection().queryWithDescription(message.payload);
+		if (isCommand(message, 'query')) {
+			try {
+				const { data, properties } = await this._item
+					.getConnection()
+					.queryWithDescription(message.payload.query);
 				this.postMessage({
-					command: 'result',
-					payload: { data, columns: properties },
+					command: 'query.result',
+					payload: { success: true, data: { data, columns: properties } },
 				});
-				break;
+			} catch (error: any) {
+				showError(error.message);
+				this.postMessage({
+					command: 'query.result',
+					payload: { success: false, error: { message: error.message } },
+				});
+			}
+			return;
 		}
 	}
 }

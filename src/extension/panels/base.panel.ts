@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { IMessagePayload, IPostMessage } from '../../../shared/types';
+import { isCommand } from '../../../shared/utils';
 import Logger from '../../logger';
+import { showError } from '../utils';
 
 export default abstract class BasePanel {
 	protected _context: vscode.ExtensionContext;
@@ -68,27 +70,30 @@ export default abstract class BasePanel {
 
 	private _didReceiveMessage = async <T extends keyof IMessagePayload>(message: IPostMessage<T>): Promise<void> => {
 		try {
-			switch (message.command) {
-				case 'log':
-					// @ts-expect-error
-					Logger.log('webview-ui', message.payload.level, message.payload.message, message.payload.data);
-					break;
-				case 'ready':
-					this.postMessage({
-						command: 'navigation',
-						payload: {
-							route: this._panel.viewType,
-							data: await this._getInitialData(),
-						},
-					});
-					break;
-				default:
-					Logger.info('extension', 'Received post message', {
-						message,
-					});
-					await this._handleMessage(message);
-					break;
+			if (isCommand(message, 'log')) {
+				// @ts-expect-error
+				Logger.log('webview-ui', message.payload.level, message.payload.message, message.payload.data);
+				return;
 			}
+			if (isCommand(message, 'error')) {
+				Logger.error('webview-ui', message.payload.message, { error: message.payload });
+				showError(message.payload.message);
+				return;
+			}
+			if (isCommand(message, 'ready')) {
+				this.postMessage({
+					command: 'navigation',
+					payload: {
+						route: this._panel.viewType,
+						data: await this._getInitialData(),
+					},
+				});
+				return;
+			}
+			Logger.info('extension', 'Received post message', {
+				message,
+			});
+			await this._handleMessage(message);
 		} catch (error: any) {
 			Logger.error('extension', `Error handling message: ${error.message}`, {
 				message,

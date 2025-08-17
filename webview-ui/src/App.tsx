@@ -1,18 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { IMessagePayload, IPostMessage } from '../../shared/types';
+import { isCommand } from '../../shared/utils';
 import './App.css';
 import Loader from './components/loader';
 import Config from './pages/config';
 import QueryEditor from './pages/query-editor';
 import Request from './request';
 import { vscode } from './vscode-api';
-
-const isCommand = <T extends keyof IMessagePayload>(
-	message: IPostMessage<keyof IMessagePayload>,
-	command: T,
-): message is IPostMessage<T> => {
-	return message.command === command;
-};
 
 const App: React.FC = () => {
 	const [route, setRoute] = useState<string | null>(null);
