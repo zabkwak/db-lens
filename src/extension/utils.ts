@@ -8,3 +8,7 @@ export async function confirmWarningDialog(message: string, confirmAction: strin
 export function showError(message: string): void {
 	vscode.window.showErrorMessage(message);
 }
+
+export function showInfo(message: string): void {
+	vscode.window.showInformationMessage(message);
+}

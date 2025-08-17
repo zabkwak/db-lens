@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import ConnectionManager from '../../connection/connection-manager';
 import Logger from '../../logger';
+import { showInfo } from '../utils';
 import TreeItem from './tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import LoadingTreeItem from './tree-items/loading.tree-item';
@@ -76,6 +77,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			await item.connect();
 			this.setItemContextValue(item, EConnectionContextValue.CONNECTED);
 			Logger.info('connection', `Connected to ${connection.getName()}`);
+			showInfo(`Connected to ${connection.getName()}`);
 		} catch (error: any) {
 			connection.close(true);
 			this.setItemContextValue(item, EConnectionContextValue.DEFAULT);
