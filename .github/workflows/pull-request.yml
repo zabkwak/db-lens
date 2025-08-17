@@ -27,7 +27,7 @@ jobs:
               run: npm install
             - name: Run tests
               shell: bash
-              run: npm run vscode:test
+              run: xvfb-run -a npm run vscode:test
 
     test-webview:
         runs-on: ubuntu-latest
