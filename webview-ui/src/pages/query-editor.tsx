@@ -8,7 +8,7 @@ import { vscode } from '../vscode-api';
 import './query-editor.scss';
 
 const QueryEditor: React.FC = () => {
-	const [query, setQuery] = useState("SELECT * FROM terminal where account_id = 'gi6d'");
+	const [query, setQuery] = useState('');
 	const [result, setResult] = useState<TState<IMessagePayload['query.result']['data']>>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	async function handleRunQuery(): Promise<void> {

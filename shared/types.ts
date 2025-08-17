@@ -84,8 +84,7 @@ export interface ISSHTunnelConfiguration {
 	 */
 	passphrase: string | null;
 	/**
-	 * The local port to forward.
-	 * @default 8080
+	 * The local port to forward. If not set random port will be generated.
 	 */
 	localPort: number | null;
 	/**
