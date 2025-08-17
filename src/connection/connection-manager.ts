@@ -39,7 +39,24 @@ export default class ConnectionManager {
 			throw new Error(`Connection with name ${connection.getName()} already exists`);
 		}
 		this._connections.push(connection);
-		await this.save();
+		await this._save();
+	}
+
+	public static async updateConnection(connection: Connection<any, any>): Promise<void> {
+		if (!this._connections) {
+			await this.load();
+		}
+		assert(this._connections, 'Connections should be loaded before updating one');
+		const index = this._connections.findIndex((c) => c.getName() === connection.getName());
+		if (index === -1) {
+			throw new Error(`Connection with name ${connection.getName()} does not exist`);
+		const existingConnection = this._connections.find((c) => c.getName() === connection.getName());
+		if (!existingConnection) {
+			throw new Error(`Connection with name ${connection.getName()} does not exist`);
+		}
+		const index = this._connections.indexOf(existingConnection);
+		this._connections[index] = connection;
+		await this._save();
 	}
 
 	public static async deleteConnection(connection: Connection<any, any>): Promise<void> {
@@ -48,22 +65,7 @@ export default class ConnectionManager {
 		}
 		assert(this._connections, 'Connections should be loaded before deleting one');
 		this._connections = this._connections.filter((c) => c.getName() !== connection.getName());
-		await this.save();
-	}
-
-	public static async save(): Promise<void> {
-		if (!this._connections) {
-			return;
-		}
-		const configPath = this.getConnectionsFilePath();
-		const connectionsData: Record<string, IConnection<any, any>> = this._connections.reduce((acc, connection) => {
-			return {
-				...acc,
-				[connection.getName()]: connection.getConnection(),
-			};
-		}, {} as Record<string, IConnection<any, any>>);
-		await fs.mkdir(path.dirname(configPath), { recursive: true });
-		await fs.writeFile(configPath, JSON.stringify(connectionsData, null, 4), 'utf-8');
+		await this._save();
 	}
 
 	public static getConnections(): Connection<any, any>[] | null {
@@ -80,5 +82,20 @@ export default class ConnectionManager {
 
 	public static clear(): void {
 		this._connections = null;
+	}
+
+	private static async _save(): Promise<void> {
+		if (!this._connections) {
+			return;
+		}
+		const configPath = this.getConnectionsFilePath();
+		const connectionsData: Record<string, IConnection<any, any>> = this._connections.reduce((acc, connection) => {
+			return {
+				...acc,
+				[connection.getName()]: connection.getConnection(),
+			};
+		}, {} as Record<string, IConnection<any, any>>);
+		await fs.mkdir(path.dirname(configPath), { recursive: true });
+		await fs.writeFile(configPath, JSON.stringify(connectionsData, null, 4), 'utf-8');
 	}
 }

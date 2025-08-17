@@ -5,17 +5,20 @@ import Connection from '../../connection/connection';
 import ConnectionManager from '../../connection/connection-manager';
 import Logger from '../../logger';
 import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
+import { confirmWarningDialog } from '../utils';
 import ViewManager from '../view-manager';
 import BasePanel from './base.panel';
 
 export default class ConfigPanel extends BasePanel {
 	private _item: ConnectionTreeItem<any, any> | null;
+	private _connection: Connection<any, any> | null;
 
 	constructor(context: vscode.ExtensionContext);
 	constructor(context: vscode.ExtensionContext, item: ConnectionTreeItem<any, any>);
 	constructor(context: vscode.ExtensionContext, item: ConnectionTreeItem<any, any> | null = null) {
 		super(context, `DB Lens - ${item?.label || 'Add new'} configuration`, 'db-lens.config');
 		this._item = item;
+		this._connection = item?.getConnection() || null;
 	}
 
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
@@ -61,13 +64,33 @@ export default class ConfigPanel extends BasePanel {
 			const { payload, requestId } = message;
 			Logger.info('extension', 'Saving connection configuration');
 			try {
-				if (!this._item) {
-					const connection = await this._constructConnection(payload);
-					await ConnectionManager.addConnection(connection);
+				if (!this._connection) {
+					this._connection = await this._constructConnection(payload);
+					await ConnectionManager.addConnection(this._connection);
 					ViewManager.getConnectionTreeProvider().refresh();
 				} else {
-					// TODO update connection
-					await ConnectionManager.save();
+					this._connection = await this._constructConnection(payload);
+					if (
+						!(await confirmWarningDialog(
+							'Are you sure you want to update the existing connection?',
+							'Update',
+						))
+					) {
+						this.postMessage({
+							command: 'saveConnectionResult',
+							payload: {
+								success: false,
+								message: 'Save canceled by user.',
+							},
+							requestId,
+						});
+						return;
+					}
+					await ConnectionManager.updateConnection(this._connection);
+					// TODO manage the re-save during creation
+					this._item
+						? ViewManager.getConnectionTreeProvider().refresh(this._item)
+						: ViewManager.getConnectionTreeProvider().refresh();
 				}
 				Logger.info('extension', 'Connection configuration saved');
 				vscode.window.showInformationMessage('Connection configuration saved successfully');
