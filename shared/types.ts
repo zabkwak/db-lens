@@ -16,7 +16,7 @@ export enum EQueryCommand {
 	UPDATE = 'update',
 	SELECT = 'select',
 	INSERT = 'insert',
-	DELETE = 'DELETE',
+	DELETE = 'delete',
 }
 
 export interface IMessagePayload {
