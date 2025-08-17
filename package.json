@@ -132,7 +132,7 @@
 					"items": {
 						"type": "integer"
 					},
-					"description": "Local port range for ssh tunnels DB Lens.",
+					"description": "Local port range for SSH tunnels in DB Lens.",
 					"default": [
 						49152,
 						65535
