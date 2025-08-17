@@ -4,3 +4,7 @@ export async function confirmWarningDialog(message: string, confirmAction: strin
 	const result = await vscode.window.showWarningMessage(message, { modal: true }, confirmAction);
 	return result === confirmAction;
 }
+
+export function showError(message: string): void {
+	vscode.window.showErrorMessage(message);
+}

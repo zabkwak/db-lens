@@ -113,6 +113,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			password: this._password.password,
 			database: this._credentials.database,
 			ssl: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
+			statement_timeout: 30000,
 		});
 		const schema = this._credentials.schema || 'public';
 		this._pool.on('connect', (client) => {

@@ -4,12 +4,22 @@ export interface IPostMessage<T extends keyof IMessagePayload> {
 	requestId?: string;
 }
 
+export interface IResult<T> {
+	success: boolean;
+	error?: {
+		message: string;
+	};
+	data?: T;
+}
+
 export interface IMessagePayload {
-	result: {
+	query: {
+		query: string;
+	};
+	'query.result': IResult<{
 		data: any[];
 		columns: IColumn[];
-	};
-	query: string;
+	}>;
 	log: {
 		level: 'info' | 'warn' | 'error';
 		message: string;
@@ -29,6 +39,9 @@ export interface IMessagePayload {
 	saveConnectionResult: {
 		success: boolean;
 		message?: string;
+	};
+	error: {
+		message: string;
 	};
 }
 
