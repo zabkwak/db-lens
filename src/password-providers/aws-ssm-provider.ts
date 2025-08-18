@@ -1,4 +1,4 @@
-import { awsCommand } from '../services/aws';
+import AWS from '../services/aws';
 import BasePasswordProvider from './base';
 import Password from './password';
 
@@ -25,20 +25,14 @@ export default class AWSSSMPasswordProvider extends BasePasswordProvider<IAWSSSM
 	}
 
 	private async _getParameter(): Promise<IParameter> {
-		const r: Response = await awsCommand(
-			'ssm',
-			'get-parameter',
-			this._config.region,
-			this._config.profile,
-			[
-				{
-					name: 'name',
-					value: this._config.name,
-				},
-				{ name: 'with-decryption' },
-			],
-			true,
-		);
+		const r = await new AWS<Response>()
+			.command('ssm')
+			.function('get-parameter')
+			.region(this._config.region)
+			.profile(this._config.profile)
+			.arg('name', this._config.name)
+			.arg('with-decryption')
+			.json();
 		return r.Parameter;
 	}
 }
