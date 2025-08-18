@@ -3,6 +3,7 @@ import ConnectionManager from '../../connection/connection-manager';
 import Logger from '../../logger';
 import { showInfo } from '../utils';
 import TreeItem from './tree-item';
+import CollectionTreeItem from './tree-items/collection.tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import LoadingTreeItem from './tree-items/loading.tree-item';
 import WarningTreeItem from './tree-items/warning.tree-item';
@@ -44,6 +45,9 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (element instanceof ConnectionTreeItem) {
 			return this.getConnectionChildren(element);
 		}
+		if (element instanceof CollectionTreeItem) {
+			return this.getCollectionChildren(element);
+		}
 		return [];
 	}
 
@@ -61,12 +65,16 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			if (!collections.length) {
 				return [new WarningTreeItem('No collections found')];
 			}
-			return collections.map((collection) => new TreeItem(collection, vscode.TreeItemCollapsibleState.Collapsed));
+			return collections.map((collection) => new CollectionTreeItem(collection));
 		}
 		if (!connection.isConnected() && !connection.isConnecting()) {
 			this.connect(element);
 		}
 		return [new LoadingTreeItem('Connecting...')];
+	}
+
+	public getCollectionChildren(element: CollectionTreeItem): TreeItem[] {
+		return [];
 	}
 
 	public async connect(item: ConnectionTreeItem<any, any>): Promise<void> {

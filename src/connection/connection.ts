@@ -47,7 +47,7 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 	private _collections: string[] | null = null;
 	private _describes: Record<string, any> = {};
 
-	private constructor(name: string, connection: IConnection<T, U>) {
+	constructor(name: string, connection: IConnection<T, U>) {
 		// TODO validate all credentials
 		this._name = name;
 		this._connection = connection;
