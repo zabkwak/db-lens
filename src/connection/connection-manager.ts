@@ -11,7 +11,6 @@ export default class ConnectionManager {
 
 	public static async load(): Promise<void> {
 		const configPath = this.getConnectionsFilePath();
-		// TODO connection groups
 		try {
 			const data = await fs.readFile(configPath, 'utf-8');
 			const connectionsData: Record<string, IConnection<any, any>> = JSON.parse(data);

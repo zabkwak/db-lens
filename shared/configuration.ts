@@ -16,8 +16,6 @@ export interface IFormDefinition<T extends keyof IFormType = keyof IFormType> {
 	required?: boolean;
 }
 
-export const drivers: (keyof typeof driverOptions)[] = ['postgres', 'mysql', 'sqlite'];
-
 export const driverOptions: Record<string, IFormDefinition[]> = {
 	postgres: [
 		{
@@ -70,7 +68,7 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 	sqlite: [],
 };
 
-export const passwordProviders: (keyof typeof passwordProviderOptions)[] = ['aws-rds-token'];
+export const drivers = Object.keys(driverOptions) as (keyof typeof driverOptions)[];
 
 export const passwordProviderOptions: Record<string, IFormDefinition[]> = {
 	'aws-rds-token': [
@@ -134,3 +132,5 @@ export const passwordProviderOptions: Record<string, IFormDefinition[]> = {
 		},
 	],
 };
+
+export const passwordProviders = Object.keys(passwordProviderOptions) as (keyof typeof passwordProviderOptions)[];
