@@ -153,7 +153,6 @@ suite('ConnectionTreeProvider', () => {
 						return false;
 					},
 					async connect() {
-						console.log('baf');
 					},
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
