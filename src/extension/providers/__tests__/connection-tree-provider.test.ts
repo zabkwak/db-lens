@@ -117,11 +117,14 @@ suite('ConnectionTreeProvider', () => {
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
-
-				expect(sinon.stub(mockConnection, 'connect').notCalled).to.be.true;
-				expect(sinon.stub(mockConnection, 'loadCollections').notCalled).to.be.true;
+				const connectStub = sinon.stub(mockConnection, 'connect');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+
+				expect(connectStub.notCalled).to.be.true;
+				expect(loadCollectionsStub.notCalled).to.be.true;
+
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(WarningTreeItem);
@@ -149,15 +152,20 @@ suite('ConnectionTreeProvider', () => {
 					isConnecting() {
 						return false;
 					},
-					async connect() {},
+					async connect() {
+						console.log('baf');
+					},
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
-
-				expect(sinon.stub(mockConnection, 'connect').resolves()).to.be.ok;
-				expect(sinon.stub(mockConnection, 'loadCollections').notCalled).to.be.true;
+				const connectStub = sinon.stub(mockConnection, 'connect');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+
+				expect(connectStub.calledOnce).to.be.true;
+				expect(loadCollectionsStub.notCalled).to.be.true;
+
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(LoadingTreeItem);
@@ -189,11 +197,14 @@ suite('ConnectionTreeProvider', () => {
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
-
-				expect(sinon.stub(mockConnection, 'connect').notCalled).to.be.true;
-				expect(sinon.stub(mockConnection, 'loadCollections').resolves()).to.be.ok;
+				const connectStub = sinon.stub(mockConnection, 'connect');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+
+				expect(connectStub.notCalled).to.be.true;
+				expect(loadCollectionsStub.calledOnce).to.be.true;
+
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(LoadingTreeItem);
@@ -225,11 +236,14 @@ suite('ConnectionTreeProvider', () => {
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
-
-				expect(sinon.stub(mockConnection, 'connect').notCalled).to.be.true;
-				expect(sinon.stub(mockConnection, 'loadCollections').notCalled).to.be.true;
+				const connectStub = sinon.stub(mockConnection, 'connect');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+
+				expect(connectStub.notCalled).to.be.true;
+				expect(loadCollectionsStub.notCalled).to.be.true;
+
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(WarningTreeItem);
@@ -261,11 +275,14 @@ suite('ConnectionTreeProvider', () => {
 					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
-
-				expect(sinon.stub(mockConnection, 'connect').notCalled).to.be.true;
-				expect(sinon.stub(mockConnection, 'loadCollections').notCalled).to.be.true;
+				const connectStub = sinon.stub(mockConnection, 'connect');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+
+				expect(connectStub.notCalled).to.be.true;
+				expect(loadCollectionsStub.notCalled).to.be.true;
+
 				expect(children).to.have.lengthOf(2);
 				const [child1, child2] = children;
 				expect(child1).to.be.instanceOf(CollectionTreeItem);
