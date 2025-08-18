@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import AWS from '../services/aws';
 import BasePasswordProvider from './base';
 import Password from './password';
 
@@ -22,31 +22,15 @@ export default class AWSRDSTokenPasswordProvider extends BasePasswordProvider<IA
 		return new Password(token, new Date(Date.now() + parseInt(expiresIn, 10) * 1000));
 	}
 
-	private _generateAuthToken(): Promise<string> {
-		const command = [
-			'aws',
-			'rds',
-			'generate-db-auth-token',
-			'--hostname',
-			this._config.host,
-			'--port',
-			this._config.port,
-			'--username',
-			this._config.username,
-			'--region',
-			this._config.region,
-			'--profile',
-			this._config.profile,
-		];
-		return new Promise((resolve, reject) => {
-			exec(command.join(' '), (err, stdout, stderr) => {
-				if (err) {
-					reject(err);
-					return;
-				}
-				// TODO handle stderr
-				resolve(stdout.trim());
-			});
-		});
+	private async _generateAuthToken(): Promise<string> {
+		return new AWS()
+			.command('rds')
+			.function('generate-db-auth-token')
+			.region(this._config.region)
+			.profile(this._config.profile)
+			.arg('hostname', this._config.host)
+			.arg('port', this._config.port)
+			.arg('username', this._config.username)
+			.string();
 	}
 }
