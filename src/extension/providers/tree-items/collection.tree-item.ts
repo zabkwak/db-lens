@@ -1,12 +1,20 @@
 import * as vscode from 'vscode';
-import TreeItem from '../tree-item';
+import BaseDriver from '../../../drivers/base';
+import TreeItem from './tree-item';
 
 export default class CollectionTreeItem extends TreeItem {
-	constructor(name: string) {
+	private _driver: BaseDriver<unknown, unknown>;
+
+	constructor(name: string, driver: BaseDriver<unknown, unknown>) {
 		super(name, vscode.TreeItemCollapsibleState.Collapsed);
+		this._driver = driver;
 	}
 
 	public getIcon(): vscode.ThemeIcon | undefined {
 		return new vscode.ThemeIcon('folder');
+	}
+
+	public getDriver(): BaseDriver<unknown, unknown> {
+		return this._driver;
 	}
 }

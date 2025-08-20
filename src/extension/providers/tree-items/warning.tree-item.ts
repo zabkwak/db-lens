@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import TreeItem from '../tree-item';
+import TreeItem from './tree-item';
 
 export default class WarningTreeItem extends TreeItem {
 	constructor(label: string) {
