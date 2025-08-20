@@ -3,7 +3,12 @@ import types from 'pg-types';
 import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import Password from '../password-providers/password';
-import BaseDriver, { ICollectionPropertyDescription, IQueryResultWithDescription } from './base';
+import BaseDriver, {
+	ICollectionPropertyDescription,
+	ICollectionPropertyDescriptionRecord,
+	IQueryResultCollectionPropertyDescription,
+	IQueryResultWithDescription,
+} from './base';
 
 export interface IPostgresCredentials {
 	host: string;
@@ -50,11 +55,45 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 	}
 
 	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const result = await this.query<ICollectionPropertyDescription>(
-			`SELECT column_name as name, data_type as type FROM information_schema.columns WHERE table_name = $1`,
+		const result = await this.query<ICollectionPropertyDescriptionRecord>(
+			`SELECT
+    c.column_name AS name,
+    c.data_type AS type,
+    c.is_nullable,
+    c.column_default AS default_value,
+    (pk.column_name IS NOT NULL) AS is_primary_key
+FROM
+    information_schema.columns AS c
+LEFT JOIN (
+    SELECT
+        kcu.table_schema,
+        kcu.table_name,
+        kcu.column_name
+    FROM
+        information_schema.key_column_usage AS kcu
+    JOIN
+        information_schema.table_constraints AS tc
+            ON kcu.constraint_name = tc.constraint_name
+            AND kcu.table_schema = tc.table_schema
+    WHERE
+        tc.constraint_type = 'PRIMARY KEY'
+) AS pk
+    ON c.table_schema = pk.table_schema
+    AND c.table_name = pk.table_name
+    AND c.column_name = pk.column_name
+WHERE
+    c.table_name = $1`,
 			[collectionName],
 		);
-		return result;
+		return result.map((record): ICollectionPropertyDescription => {
+			return {
+				name: record.name,
+				type: record.type,
+				isNullable: record.is_nullable === 'YES',
+				defaultValue: record.default_value,
+				isPrimaryKey: record.is_primary_key,
+			};
+		});
 	}
 
 	public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
@@ -84,7 +123,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			const { rows, fields, rowCount, command } = await this._pool.query(query, params);
 			const duration = Date.now() - start;
 			Logger.info('query', `Executed query with description: ${query} in ${duration}ms`);
-			const properties = fields.map((field) => {
+			const properties = fields.map((field): IQueryResultCollectionPropertyDescription => {
 				const typeName =
 					Object.entries(types.builtins).find(([name, id]) => id === field.dataTypeID)?.[0] || 'unknown';
 				return {

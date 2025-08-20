@@ -104,10 +104,6 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 		this._collections = await this._driver.getCollections();
 	}
 
-	public async describeCollection(collectionName: string): Promise<void> {
-		// TODO
-	}
-
 	public isConnected(): boolean {
 		return this._state === EState.CONNECTED;
 	}
@@ -143,6 +139,10 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 
 	public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
 		return this._driver.queryWithDescription<T>(query);
+	}
+
+	public getDriver(): BaseDriver<unknown, unknown> {
+		return this._driver;
 	}
 
 	// TODO check differences between getConnection and getConfiguration

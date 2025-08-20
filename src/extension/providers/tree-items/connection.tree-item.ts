@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import Connection from '../../../connection/connection';
 import { drivers } from '../../../drivers';
 import { passwordProviders } from '../../../password-providers';
-import TreeItem from '../tree-item';
+import TreeItem from './tree-item';
 
 export enum EConnectionContextValue {
 	CONNECTED = 'connection.connected',

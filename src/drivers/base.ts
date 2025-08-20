@@ -2,7 +2,7 @@ import { EQueryCommand } from '../../shared/types';
 import SSHTunnel from '../connection/ssh-tunnel';
 import BasePasswordProvider from '../password-providers/base';
 
-export interface ICollectionPropertyDescription {
+export interface IQueryResultCollectionPropertyDescription {
 	name: string;
 	// TODO enum?
 	type: string;
@@ -10,9 +10,25 @@ export interface ICollectionPropertyDescription {
 
 export interface IQueryResultWithDescription<T> {
 	data: T[];
-	properties: ICollectionPropertyDescription[];
+	properties: IQueryResultCollectionPropertyDescription[];
 	rowCount: number | null;
 	command: EQueryCommand;
+}
+
+export interface ICollectionPropertyDescription {
+	name: string;
+	type: string;
+	isNullable: boolean;
+	defaultValue: string | null;
+	isPrimaryKey: boolean;
+}
+
+export interface ICollectionPropertyDescriptionRecord {
+	name: string;
+	type: string;
+	is_nullable: 'YES' | 'NO';
+	default_value: string | null;
+	is_primary_key: boolean;
 }
 
 export default abstract class BaseDriver<T, U> {
