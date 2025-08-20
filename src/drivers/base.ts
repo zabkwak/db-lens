@@ -26,7 +26,7 @@ export interface ICollectionPropertyDescription {
 export interface ICollectionPropertyDescriptionRecord {
 	name: string;
 	type: string;
-	is_nullable: boolean;
+	is_nullable: 'YES' | 'NO';
 	default_value: string | null;
 	is_primary_key: boolean;
 }

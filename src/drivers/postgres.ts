@@ -89,7 +89,7 @@ WHERE
 			return {
 				name: record.name,
 				type: record.type,
-				isNullable: record.is_nullable,
+				isNullable: record.is_nullable === 'YES',
 				defaultValue: record.default_value,
 				isPrimaryKey: record.is_primary_key,
 			};
