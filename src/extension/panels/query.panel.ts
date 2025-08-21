@@ -19,7 +19,8 @@ export default class QueryPanel extends BasePanel {
 			try {
 				const { data, properties, rowCount, command } = await this._item
 					.getConnection()
-					.queryWithDescription(payload.query);
+					.getDriver()
+					.query(payload.query);
 				this.postMessage({
 					command: 'query.result',
 					payload: { success: true, data: { data, columns: properties, rowCount, command } },

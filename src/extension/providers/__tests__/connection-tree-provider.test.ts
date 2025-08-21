@@ -5,7 +5,7 @@ import sinon from 'sinon';
 import { TreeItemCollapsibleState } from 'vscode';
 import Connection from '../../../connection/connection';
 import ConnectionManager from '../../../connection/connection-manager';
-import BaseDriver, { ICollectionPropertyDescription, IQueryResultWithDescription } from '../../../drivers/base';
+import BaseDriver, { ICollectionPropertyDescription, IQueryResult } from '../../../drivers/base';
 import BasePasswordProvider from '../../../password-providers/base';
 import Password from '../../../password-providers/password';
 import ConnectionTreeProvider from '../connection-tree-provider';
@@ -340,10 +340,7 @@ suite('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
-				public query<T>(query: string): Promise<T[]> {
-					throw new Error('Method not implemented.');
-				}
-				public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
+				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
 			}
@@ -398,10 +395,7 @@ suite('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
-				public query<T>(query: string): Promise<T[]> {
-					throw new Error('Method not implemented.');
-				}
-				public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
+				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
 			}
