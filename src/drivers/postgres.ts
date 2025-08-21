@@ -15,6 +15,7 @@ export interface IPostgresCredentials {
 	database: string;
 	sslRejectUnauthorized?: boolean;
 	schema?: string;
+	disableSsl?: boolean;
 }
 
 interface ICollectionPropertyDescriptionRecord {
@@ -201,13 +202,27 @@ WHERE
 			user: this._credentials.username,
 			password: this._password.password,
 			database: this._credentials.database,
-			ssl: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
+			ssl: this._credentials.disableSsl
+				? false
+				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
 			statement_timeout: 30000,
 		});
 		const schema = this._credentials.schema || 'public';
 		this._pool.on('connect', (client) => {
 			client.query(`SET search_path TO ${schema}`);
 		});
+		try {
+			await this._pool.query('SELECT NOW()');
+		} catch (error: any) {
+			const message = error.message || error.code || 'Unknown error';
+			Logger.error('postgres', `Error connecting to PostgreSQL: ${message}`, {
+				error: {
+					message,
+					...error,
+				},
+			});
+			throw new Error(message);
+		}
 	}
 
 	private _getCommand(command: string): EQueryCommand {

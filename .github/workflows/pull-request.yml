@@ -41,3 +41,22 @@ jobs:
               working-directory: webview-ui
               shell: bash
               run: npm test
+
+    test-e2e:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install dependencies
+              working-directory: webview-ui
+              shell: bash
+              run: npm install
+            - name: Start services
+              shell: bash
+              run: npm run test:e2e:prepare
+            - name: Run tests
+              shell: bash
+              run: npm run test:e2e
+            - name: Stop services
+              if: always()
+              shell: bash
+              run: npm run test:e2e:stop
