@@ -115,7 +115,7 @@ WHERE
 			return this._query<T>(query, params as any[]);
 		}
 		const start = Date.now();
-		Logger.info('query', `Executing query: ${query}}`, {
+		Logger.info('query', `Executing query: ${query}`, {
 			params,
 		});
 		try {
