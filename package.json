@@ -154,8 +154,12 @@
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
 		"check-types": "tsc --noEmit",
 		"lint": "eslint src",
-		"test": "./node_modules/.bin/mocha .mocharc.js",
-		"vscode:test": "npm run pretest && vscode-test"
+		"test": "./node_modules/.bin/mocha --config .mocharc.js",
+		"test:vscode": "npm run pretest && vscode-test",
+		"test:e2e:prepare": "docker compose -f ./e2e/docker-compose.yml up -d",
+		"test:e2e": "./node_modules/.bin/mocha --config ./e2e/.mocharc.js",
+		"test:e2e:stop": "docker compose -f ./e2e/docker-compose.yml down",
+		"vscode:test": "npm run test:vscode"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.20",
