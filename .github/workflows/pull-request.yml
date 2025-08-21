@@ -47,7 +47,6 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - name: Install dependencies
-              working-directory: webview-ui
               shell: bash
               run: npm install
             - name: Start services
