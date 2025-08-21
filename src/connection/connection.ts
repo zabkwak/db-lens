@@ -1,6 +1,6 @@
 import { IConnectionConfiguration, ISSHTunnelConfiguration } from '../../shared/types';
 import { drivers, TCredentials } from '../drivers';
-import BaseDriver, { IQueryResultWithDescription } from '../drivers/base';
+import BaseDriver from '../drivers/base';
 import { passwordProviders, TPasswordProviders } from '../password-providers';
 import SSHTunnel from './ssh-tunnel';
 
@@ -126,19 +126,6 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 
 	public getCollections(): string[] {
 		return this._collections || [];
-	}
-
-	// TODO types
-	public getTableDescription(tableName: string): any {
-		return this._describes[tableName] || null;
-	}
-
-	public query<T>(query: string): Promise<T[]> {
-		return this._driver.query<T>(query);
-	}
-
-	public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
-		return this._driver.queryWithDescription<T>(query);
 	}
 
 	public getDriver(): BaseDriver<unknown, unknown> {

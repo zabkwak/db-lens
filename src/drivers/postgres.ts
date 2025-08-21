@@ -6,8 +6,8 @@ import Password from '../password-providers/password';
 import BaseDriver, {
 	ICollectionPropertyDescription,
 	ICollectionPropertyDescriptionRecord,
+	IQueryResult,
 	IQueryResultCollectionPropertyDescription,
-	IQueryResultWithDescription,
 } from './base';
 
 export interface IPostgresCredentials {
@@ -48,14 +48,14 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 	}
 
 	public async getCollections(): Promise<string[]> {
-		const result = await this.query<{ tablename: string }>(
+		const { data } = await this._query<{ tablename: string }>(
 			`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = current_schema() order by tablename asc`,
 		);
-		return result.map((row) => row.tablename);
+		return data.map((row) => row.tablename);
 	}
 
 	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const result = await this.query<ICollectionPropertyDescriptionRecord>(
+		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(
 			`SELECT
     c.column_name AS name,
     c.data_type AS type,
@@ -85,7 +85,7 @@ WHERE
     c.table_name = $1`,
 			[collectionName],
 		);
-		return result.map((record): ICollectionPropertyDescription => {
+		return data.map((record): ICollectionPropertyDescription => {
 			return {
 				name: record.name,
 				type: record.type,
@@ -96,16 +96,13 @@ WHERE
 		});
 	}
 
-	public queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>> {
+	public query<T>(query: string): Promise<IQueryResult<T>> {
 		return this._query<T>(query);
 	}
 
-	public async query<T>(query: string, params?: any[]): Promise<T[]> {
-		const { data } = await this._query<T>(query, params);
-		return data;
-	}
-
-	private async _query<T>(query: string, params?: any[]): Promise<IQueryResultWithDescription<T>> {
+	private async _query<T>(query: string): Promise<IQueryResult<T>>;
+	private async _query<T>(query: string, params: any[]): Promise<IQueryResult<T>>;
+	private async _query<T>(query: string, params?: any[]): Promise<IQueryResult<T>> {
 		if (!this._pool) {
 			throw new Error('Database not connected');
 		}
@@ -115,14 +112,16 @@ WHERE
 		if (this._password.isExpired()) {
 			Logger.warn('postgres', 'Password expired, reconnecting...');
 			await this.reconnect();
-			return this._query<T>(query, params);
+			return this._query<T>(query, params as any[]);
 		}
 		const start = Date.now();
-		Logger.info('query', `Executing query with description: ${query} with params: ${JSON.stringify(params)}`);
+		Logger.info('query', `Executing query: ${query}}`, {
+			params,
+		});
 		try {
 			const { rows, fields, rowCount, command } = await this._pool.query(query, params);
 			const duration = Date.now() - start;
-			Logger.info('query', `Executed query with description: ${query} in ${duration}ms`);
+			Logger.info('query', `Executed query: ${query} in ${duration}ms`);
 			const properties = fields.map((field): IQueryResultCollectionPropertyDescription => {
 				const typeName =
 					Object.entries(types.builtins).find(([name, id]) => id === field.dataTypeID)?.[0] || 'unknown';
@@ -133,7 +132,7 @@ WHERE
 			});
 			return { data: rows as T[], properties, rowCount, command: this._getCommand(command) };
 		} catch (error: any) {
-			Logger.error('query', `Error executing query with description: ${query} - ${error}`, {
+			Logger.error('query', `Error executing query: ${query} - ${error}`, {
 				error: {
 					message: error.message,
 					...error,

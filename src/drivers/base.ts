@@ -8,7 +8,7 @@ export interface IQueryResultCollectionPropertyDescription {
 	type: string;
 }
 
-export interface IQueryResultWithDescription<T> {
+export interface IQueryResult<T> {
 	data: T[];
 	properties: IQueryResultCollectionPropertyDescription[];
 	rowCount: number | null;
@@ -53,7 +53,5 @@ export default abstract class BaseDriver<T, U> {
 
 	public abstract describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]>;
 
-	public abstract query<T>(query: string): Promise<T[]>;
-
-	public abstract queryWithDescription<T>(query: string): Promise<IQueryResultWithDescription<T>>;
+	public abstract query<T>(query: string): Promise<IQueryResult<T>>;
 }
