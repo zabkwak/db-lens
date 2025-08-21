@@ -13,6 +13,8 @@ export interface IQueryResult<T> {
 	properties: IQueryResultCollectionPropertyDescription[];
 	rowCount: number | null;
 	command: EQueryCommand;
+	commit: () => Promise<void>;
+	rollback: () => Promise<void>;
 }
 
 export interface ICollectionPropertyDescription {
@@ -21,14 +23,6 @@ export interface ICollectionPropertyDescription {
 	isNullable: boolean;
 	defaultValue: string | null;
 	isPrimaryKey: boolean;
-}
-
-export interface ICollectionPropertyDescriptionRecord {
-	name: string;
-	type: string;
-	is_nullable: 'YES' | 'NO';
-	default_value: string | null;
-	is_primary_key: boolean;
 }
 
 export default abstract class BaseDriver<T, U> {
@@ -47,6 +41,7 @@ export default abstract class BaseDriver<T, U> {
 	}
 
 	public abstract connect(): Promise<void>;
+
 	public abstract close(): Promise<void>;
 
 	public abstract getCollections(): Promise<string[]>;
