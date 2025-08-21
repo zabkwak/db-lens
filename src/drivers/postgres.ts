@@ -116,11 +116,7 @@ WHERE
 	private async _query<T>(query: string): Promise<IQueryResult<T>>;
 	private async _query<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
 	private async _query<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
-	private async _query<T>(
-		query: string,
-		autocommit: boolean | any[] = true,
-		params?: any[],
-	): Promise<IQueryResult<T>> {
+	private async _query<T>(query: string, autocommit: boolean = true, params?: any[]): Promise<IQueryResult<T>> {
 		if (!this._pool) {
 			throw new Error('Database not connected');
 		}
