@@ -5,6 +5,11 @@ export async function confirmWarningDialog(message: string, confirmAction: strin
 	return result === confirmAction;
 }
 
+export async function confirmErrorDialog(message: string, confirmAction: string): Promise<boolean> {
+	const result = await vscode.window.showErrorMessage(message, { modal: true }, confirmAction);
+	return result === confirmAction;
+}
+
 export function showError(message: string): void {
 	vscode.window.showErrorMessage(message);
 }
