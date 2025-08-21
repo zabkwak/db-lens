@@ -22,8 +22,9 @@ export default class Request {
 		command: T,
 		payload: IMessagePayload[T],
 		timeout: number = 5000,
+		id?: string,
 	): Promise<IMessagePayload[U]> {
-		const requestId = uuid.v7();
+		const requestId = id || uuid.v7();
 		vscode.postMessage({
 			command,
 			payload,

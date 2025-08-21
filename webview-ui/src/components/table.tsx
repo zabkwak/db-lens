@@ -32,19 +32,22 @@ export default function Table<T extends object>(props: IProps<T>): JSX.Element {
 	const [columnLayout, setColumnLayout] = useState<string>('');
 	const [wrap, setWrap] = useState(false);
 	useEffect(() => {
-		const data = props.data.reduce((acc, row) => {
-			props.columns.forEach((column, index) => {
-				const columnName = column.name.toLowerCase();
-				// @ts-expect-error unknown type
-				const value = getValue(row[columnName]);
-				if (acc[index] == null) {
-					acc[index] = Math.max(value.length, columnName.length);
-				} else {
-					acc[index] = Math.max(acc[index], value.length, columnName.length);
-				}
-			});
-			return acc;
-		}, [] as number[]);
+		const data = props.data.reduce(
+			(acc, row) => {
+				props.columns.forEach((column, index) => {
+					const columnName = column.name.toLowerCase();
+					// @ts-expect-error unknown type
+					const value = getValue(row[columnName]);
+					if (acc[index] == null) {
+						acc[index] = Math.max(value.length, columnName.length);
+					} else {
+						acc[index] = Math.max(acc[index], value.length, columnName.length);
+					}
+				});
+				return acc;
+			},
+			props.columns.map((column) => column.name.length),
+		);
 		setColumnLayout(
 			data.map((value) => `${Math.min(Math.max(value * EM_COEFFICIENT, MIN_EM), MAX_EM)}em`).join(' '),
 		);

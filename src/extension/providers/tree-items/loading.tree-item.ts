@@ -6,6 +6,9 @@ export default class LoadingTreeItem extends TreeItem {
 	constructor(text: string);
 	constructor(text: string = 'Loading...') {
 		super(text, vscode.TreeItemCollapsibleState.None);
-		this.iconPath = new vscode.ThemeIcon('loading~spin');
+	}
+
+	public getIcon(): vscode.ThemeIcon | undefined {
+		return new vscode.ThemeIcon('loading~spin');
 	}
 }
