@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "./webview-ui"
+		},
+		{
+			"path": "./e2e"
+		}
+	]
+}

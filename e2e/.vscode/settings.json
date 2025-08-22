@@ -1,0 +1,6 @@
+{
+	"mochaExplorer.configFile": ".mocharc.js",
+	// "mochaExplorer.envPath": "./.env.test",
+	"mochaExplorer.jobs": 1,
+	"mochaExplorer.parallel": false
+}
