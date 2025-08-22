@@ -46,16 +46,23 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - name: Install dependencies
+            - name: Install code dependencies
+              shell: bash
+              run: npm install
+            - name: Install e2e tests dependencies
+              working-directory: e2e
               shell: bash
               run: npm install
             - name: Start services
+              working-directory: e2e
               shell: bash
-              run: npm run test:e2e:prepare
+              run: npm run test:prepare
             - name: Run tests
+              working-directory: e2e
               shell: bash
-              run: npm run test:e2e
+              run: npm test
             - name: Stop services
               if: always()
+              working-directory: e2e
               shell: bash
-              run: npm run test:e2e:stop
+              run: npm run test:stop
