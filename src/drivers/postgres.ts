@@ -33,7 +33,10 @@ types.setTypeParser(1184, (val) => val);
 
 export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> {
 	private _pool: Pool | null = null;
+
 	private _password: Password | null = null;
+
+	private _connected: boolean = false;
 
 	public async connect(): Promise<void> {
 		if (this._pool) {
@@ -48,6 +51,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			throw new Error('Database not connected');
 		}
 		await this._pool.end();
+		this._connected = false;
 		Logger.info('postgres', `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
 		await this._connect();
 	}
@@ -56,6 +60,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		await this._pool?.end();
 		this._pool = null;
 		this._password = null;
+		this._connected = false;
 		Logger.info('postgres', 'Connection closed');
 	}
 
@@ -112,6 +117,10 @@ WHERE
 
 	public query<T>(query: string): Promise<IQueryResult<T>> {
 		return this._query<T>(query, false);
+	}
+
+	public isConnected(): boolean {
+		return this._connected;
 	}
 
 	private async _query<T>(query: string): Promise<IQueryResult<T>>;
@@ -189,10 +198,10 @@ WHERE
 	}
 
 	private async _connect(): Promise<void> {
-		this._password = await this._passwordProvider.getPassword();
 		if (this._sshTunnel && !this._sshTunnel.isOpen()) {
 			throw new Error('SSH tunnel is not open');
 		}
+		this._password = await this._passwordProvider.getPassword();
 		const host = this._getHost();
 		const port = this._getPort();
 		Logger.info('postgres', `Connecting to PostgreSQL at ${host}:${port}`);
@@ -213,6 +222,7 @@ WHERE
 		});
 		try {
 			await this._pool.query('SELECT NOW()');
+			this._connected = true;
 		} catch (error: any) {
 			const message = error.message || error.code || 'Unknown error';
 			Logger.error('postgres', `Error connecting to PostgreSQL: ${message}`, {

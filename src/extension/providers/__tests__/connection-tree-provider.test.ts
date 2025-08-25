@@ -17,27 +17,32 @@ import PropertiesTreeItem from '../tree-items/properties.tree-item';
 import TreeItem from '../tree-items/tree-item';
 import WarningTreeItem from '../tree-items/warning.tree-item';
 
+// TODO maybe move this to unit tests entirely? it doesn't need to vscode api .. or maybe use it as full scale integration test with the composed docker service
+
 // TODO figure out how to set this up globally for extension tests
 chai.use(chaiAsPromised);
 
 suite('ConnectionTreeProvider', () => {
-	let provider: ConnectionTreeProvider;
+	let provider: ConnectionTreeProvider = new ConnectionTreeProvider();
 	let getConnectionsStub: sinon.SinonStub;
 
-	suiteSetup(() => {
+	setup(() => {
 		provider = new ConnectionTreeProvider();
 		getConnectionsStub = sinon.stub(ConnectionManager, 'getConnections');
 	});
 
-	suiteTeardown(() => {
+	teardown(() => {
 		sinon.restore();
 	});
 
 	suite('.getChildren', () => {
 		suite('Root', () => {
 			test('should return loading tree item', () => {
+				const loadStub = sinon.stub(ConnectionManager, 'load');
+				loadStub.resolves();
 				getConnectionsStub.returns(null);
 				const children = provider.getChildren();
+				expect(loadStub.called).to.be.true;
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(LoadingTreeItem);
@@ -46,8 +51,10 @@ suite('ConnectionTreeProvider', () => {
 			});
 
 			test('should return warning tree item when no connections found', () => {
+				const loadStub = sinon.stub(ConnectionManager, 'load');
 				getConnectionsStub.returns([]);
 				const children = provider.getChildren();
+				expect(loadStub.notCalled).to.be.true;
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(WarningTreeItem);
@@ -89,7 +96,7 @@ suite('ConnectionTreeProvider', () => {
 		});
 
 		suite('ConnectionTreeItem', () => {
-			suiteSetup(() => {
+			setup(() => {
 				getConnectionsStub.returns([
 					{
 						getName() {
@@ -343,6 +350,9 @@ suite('ConnectionTreeProvider', () => {
 				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
+				public isConnected(): boolean {
+					throw new Error('Method not implemented.');
+				}
 			}
 			class MockPasswordProvider extends BasePasswordProvider<{}> {
 				public getPassword(): Promise<Password> {
@@ -350,7 +360,7 @@ suite('ConnectionTreeProvider', () => {
 				}
 			}
 
-			suiteSetup(() => {
+			setup(() => {
 				getConnectionsStub.returns([
 					{
 						getName() {
@@ -398,13 +408,16 @@ suite('ConnectionTreeProvider', () => {
 				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
+				public isConnected(): boolean {
+					throw new Error('Method not implemented.');
+				}
 			}
 			class MockPasswordProvider extends BasePasswordProvider<{}> {
 				public getPassword(): Promise<Password> {
 					throw new Error('Method not implemented.');
 				}
 			}
-			suiteSetup(() => {
+			setup(() => {
 				const mockConnection = {
 					getName() {
 						return 'Connection 1';

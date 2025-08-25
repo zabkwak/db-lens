@@ -1,0 +1,15 @@
+{
+	"extends": "@istanbuljs/nyc-config-typescript",
+	"all": true,
+	"reporter": ["json"],
+	"check-leaks": true,
+	"include": ["src/**/*.ts"],
+	"exclude": [
+		"**/*.test.ts",
+		"**/*.d.ts",
+		"src/typings/**/*",
+		"webview-ui/src/__tests__/*",
+		"out/**/*.test.js",
+		"src/__tests__/**/*"
+	]
+}

@@ -18,3 +18,25 @@ services:
             start_period: 5s
         volumes:
             - ./db/init.postgre.sql:/docker-entrypoint-initdb.d/init.sql
+    ssh_server:
+        image: linuxserver/openssh-server:latest
+        container_name: ssh_server
+        hostname: ssh_server
+        environment:
+            - DOCKER_MODS=linuxserver/mods:openssh-server-ssh-tunnel
+            - PUID=1000
+            - PGID=1000
+            - TZ=UTC
+            - USER_NAME=testuser
+            - PUBLIC_KEY_FILE=/config/ssh_key.pub
+        ports:
+            - '2222:2222'
+        restart: unless-stopped
+        volumes:
+            - ./ssh_key.pub:/config/ssh_key.pub
+        healthcheck:
+            test: ['CMD', 'nc', '-z', 'localhost', '2222']
+            interval: 5s
+            timeout: 5s
+            retries: 5
+            start_period: 10s

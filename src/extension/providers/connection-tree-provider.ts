@@ -15,10 +15,6 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-	constructor() {
-		this._loadConnections();
-	}
-
 	public setItemContextValue(item: TreeItem, contextValue: string): void {
 		item.setContextValue(contextValue);
 		this.refresh(item);
@@ -37,6 +33,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	public getChildren(element?: TreeItem): TreeItem[] {
 		const connections = ConnectionManager.getConnections();
 		if (!connections) {
+			this._loadConnections();
 			return [new LoadingTreeItem()];
 		}
 		if (!connections.length) {
