@@ -2,9 +2,9 @@
 	"name": "db-lens-e2e",
 	"version": "0.1.0",
 	"scripts": {
-		"test:prepare": "docker compose -f ./docker-compose.yml up -d",
+		"test:prepare": "ssh-keygen -t rsa -b 4096 -f \"ssh_key\" -N \"\" && export SSH_PUBLIC_KEY=$(cat ssh_key.pub) && docker compose -f ./docker-compose.yml up -d",
 		"test": "./node_modules/.bin/mocha --config ./.mocharc.js",
-		"test:stop": "docker compose -f ./docker-compose.yml down"
+		"test:stop": "rm -rf ssh_key* && docker compose -f ./docker-compose.yml down"
 	},
 	"author": "",
 	"license": "MIT",

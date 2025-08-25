@@ -6,7 +6,11 @@ import { ISSHTunnelConfiguration } from '../../shared/types';
 import Config from '../config';
 import Logger from '../logger';
 import { sleep } from '../utils/utils';
+import SSHTunnelError, { ECode } from './errors/ssh-tunnel.error';
 import PortManager from './port-manager';
+
+const MAX_TIMEOUT_CHECK_TICK = 1000;
+const SPAWN_ERROR_WAIT_TIME = 500;
 
 export interface ISSHTunnelOptions extends ISSHTunnelConfiguration {
 	/**
@@ -19,6 +23,8 @@ export interface ISSHTunnelOptions extends ISSHTunnelConfiguration {
 	 * @default "localhost"
 	 */
 	remoteHost: string;
+	strictHostChecking: boolean | null;
+	userKnownHostsFile: string | null;
 }
 
 export default class SSHTunnel {
@@ -42,6 +48,8 @@ export default class SSHTunnel {
 			remotePort: config.remotePort || 8080,
 			remoteHost: config.remoteHost || 'localhost',
 			connectionTimeout: config.connectionTimeout || 10000,
+			strictHostChecking: config.strictHostChecking ?? null,
+			userKnownHostsFile: config.userKnownHostsFile ?? null,
 		};
 	}
 
@@ -66,17 +74,28 @@ export default class SSHTunnel {
 			throw new Error(`Local port ${this.getLocalPort()} is already in use`);
 		}
 		const { ssh, args } = this._constructCommand();
+		let error: Error | null = null;
 		this._sshTunnelProcess = spawn(ssh, args, { shell: true });
 		this._sshTunnelProcess.stdout?.on('data', (data) => {
 			Logger.info('ssh-tunnel', data);
 		});
 		this._sshTunnelProcess.stderr?.on('data', (data) => {
-			Logger.error('ssh-tunnel', data);
-			// TODO reject on error
+			try {
+				this._processStdError(data);
+			} catch (err: any) {
+				Logger.error('ssh-tunnel', `SSH Tunnel error: ${err.message}`);
+				error = err;
+			}
 		});
 		this._sshTunnelProcess.on('close', (code) => {
 			Logger.info('ssh-tunnel', `child process exited with code ${code}`);
 		});
+		await sleep(Math.min(SPAWN_ERROR_WAIT_TIME, this._config.connectionTimeout));
+		if (error) {
+			// If some non-warning error occurs kill the process
+			await this.close();
+			throw error;
+		}
 		await this._checkConnection();
 		this._opened = true;
 	}
@@ -115,24 +134,41 @@ export default class SSHTunnel {
 
 	private async _checkConnection(): Promise<void> {
 		const start = Date.now();
-		let error: Error | null = null;
-		while (Date.now() - start < this._config.connectionTimeout) {
+		const { connectionTimeout } = this._config;
+		let error: any | null = null;
+		const tick = Math.max(MAX_TIMEOUT_CHECK_TICK, connectionTimeout / 10);
+		while (Date.now() - start < connectionTimeout) {
 			try {
-				await this._tryConnect(this._config.connectionTimeout - (Date.now() - start));
+				await this._tryConnect(connectionTimeout - (Date.now() - start));
 				Logger.info('ssh-tunnel', 'SSH tunnel connection established');
 				return;
 			} catch (e: any) {
 				error = e;
-				await sleep(1000);
+				await sleep(tick);
 			}
 		}
 		// TODO better error handling
 		Logger.error('ssh-tunnel', `SSH tunnel connection error: ${error?.message || 'Timeout'}`);
-		throw new Error('Could not establish SSH tunnel connection');
+		await this.close();
+		throw new SSHTunnelError(
+			'Could not establish SSH tunnel connection',
+			error?.code === 'ECONNREFUSED' ? ECode.CONNECTION_REFUSED : ECode.CONNECTION_TIMEOUT,
+		);
 	}
 
 	private _constructCommand(): { ssh: string; args: string[] } {
-		const { host, port, username, privateKey, passphrase, localHost, remotePort, remoteHost } = this._config;
+		const {
+			host,
+			port,
+			username,
+			privateKey,
+			passphrase,
+			localHost,
+			remotePort,
+			remoteHost,
+			strictHostChecking,
+			userKnownHostsFile,
+		} = this._config;
 		const args = [
 			// Use the private key if provided
 			privateKey ? '-i' : null,
@@ -146,6 +182,12 @@ export default class SSHTunnel {
 			'-p',
 			`${port}`,
 		].filter(Boolean) as string[];
+		if (strictHostChecking !== null) {
+			args.push('-o', `StrictHostKeyChecking=${strictHostChecking ? 'yes' : 'no'}`);
+		}
+		if (userKnownHostsFile !== null) {
+			args.push('-o', `UserKnownHostsFile=${userKnownHostsFile}`);
+		}
 		let sshCommand = 'ssh';
 		if (os.platform() === 'win32') {
 			// TODO check the git bash path
@@ -154,6 +196,7 @@ export default class SSHTunnel {
 			// sshCommand = 'C:\\Windows\\System32\\wsl.exe'; // WSL SSH path
 		}
 		if (passphrase) {
+			console.log(['sshpass', '-p', passphrase, sshCommand, ...args].join(' '));
 			return {
 				ssh: 'sshpass',
 				args: ['-p', `${passphrase}`, sshCommand, ...args],
@@ -187,5 +230,14 @@ export default class SSHTunnel {
 				});
 			socket.connect({ host: localHost, port: this.getLocalPort() });
 		});
+	}
+
+	private _processStdError(data: Buffer): void {
+		const message: string = data.toString().trim();
+		if (message.startsWith('Warning: Permanently added')) {
+			Logger.warn('ssh-tunnel', message);
+			return;
+		}
+		throw new SSHTunnelError(message);
 	}
 }

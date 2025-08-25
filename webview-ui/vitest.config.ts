@@ -8,7 +8,10 @@ export default defineConfig({
 		globals: true,
 		setupFiles: './src/__tests__/setupTests.ts',
 		coverage: {
-			reporter: ['text', 'html'],
+			provider: 'istanbul',
+			reporter: ['json'],
+			all: true,
+			exclude: ['src/vscode-api.ts', 'dist'],
 		},
 	},
 });

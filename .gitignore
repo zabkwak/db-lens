@@ -4,3 +4,9 @@ node_modules
 .vscode-test/
 *.vsix
 tmp
+
+.nyc_output
+.nyc_output_combined
+coverage
+
+.DS_Store

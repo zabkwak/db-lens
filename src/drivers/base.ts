@@ -49,4 +49,6 @@ export default abstract class BaseDriver<T, U> {
 	public abstract describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]>;
 
 	public abstract query<T>(query: string): Promise<IQueryResult<T>>;
+
+	public abstract isConnected(): boolean;
 }
