@@ -2,8 +2,13 @@ import { expect } from 'chai';
 import path from 'path';
 import SSHTunnelError, { ECode } from '../../src/connection/errors/ssh-tunnel.error';
 import SSHTunnel from '../../src/connection/ssh-tunnel';
+import { cleanup } from './utils';
 
 describe('SSH Tunnel', () => {
+	afterEach(async () => {
+		await cleanup();
+	});
+
 	describe('.open', () => {
 		const tunnel = new SSHTunnel({
 			host: 'localhost',

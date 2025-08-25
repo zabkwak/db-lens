@@ -5,6 +5,7 @@ import SSHTunnel from '../../../src/connection/ssh-tunnel';
 import PostgresDriver from '../../../src/drivers/postgres';
 import ConfigPasswordProvider from '../../../src/password-providers/config-provider';
 import Password from '../../../src/password-providers/password';
+import { cleanup } from '../utils';
 
 interface IUser {
 	id: string;
@@ -14,6 +15,10 @@ interface IUser {
 }
 
 describe('PostgreSQL Driver', () => {
+	afterEach(async () => {
+		await cleanup();
+	});
+
 	describe('.connect', () => {
 		it('should throw an error for wrong port', async () => {
 			const postgres = new PostgresDriver(
