@@ -12,7 +12,6 @@ export default class CollectionsDataManager extends BaseDataManager<string> {
 	protected async _loadData(): Promise<string[]> {
 		// TODO make this as one method?
 		await this._connection.loadCollections();
-		console.log('Loading collections', this._connection.getCollections());
 		return this._connection.getCollections();
 	}
 }
