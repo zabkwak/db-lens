@@ -107,7 +107,7 @@ describe('ConnectionManager', () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
 			await ConnectionManager.addConnection(
-				await Connection.create('Another connection', {
+				new Connection('Another connection', {
 					db: {
 						driver: 'postgres',
 						credentials: {
@@ -233,7 +233,7 @@ describe('ConnectionManager', () => {
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
 			await expect(
 				ConnectionManager.addConnection(
-					await Connection.create('Test Connection', {
+					new Connection('Test Connection', {
 						db: {
 							driver: 'postgres',
 							credentials: {
@@ -275,7 +275,7 @@ describe('ConnectionManager', () => {
 		it('should update existing connection', async () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
-			const connection = await Connection.create('Test Connection', {
+			const connection = new Connection('Test Connection', {
 				db: {
 					driver: 'postgres',
 					credentials: {
@@ -329,7 +329,7 @@ describe('ConnectionManager', () => {
 		it("should throw an error if the connection doesn't exist", async () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
-			const connection = await Connection.create('Non Existent Connection', {
+			const connection = new Connection('Non Existent Connection', {
 				db: {
 					driver: 'postgres',
 					credentials: {
@@ -373,7 +373,7 @@ describe('ConnectionManager', () => {
 		it('should delete the existing connection', async () => {
 			getStub.withArgs('baseDir').returns(path.join(__dirname, './fixtures'));
 			getConfigurationStub.withArgs('db-lens').returns({ get: getStub });
-			const connection = await Connection.create('Test Connection', {
+			const connection = new Connection('Test Connection', {
 				db: {
 					driver: 'postgres',
 					credentials: {

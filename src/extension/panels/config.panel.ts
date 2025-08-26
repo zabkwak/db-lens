@@ -65,11 +65,11 @@ export default class ConfigPanel extends BasePanel {
 			Logger.info('extension', 'Saving connection configuration');
 			try {
 				if (!this._connection) {
-					this._connection = await this._constructConnection(payload);
+					this._connection = this._constructConnection(payload);
 					await ConnectionManager.addConnection(this._connection);
 					ViewManager.getConnectionTreeProvider().refresh();
 				} else {
-					this._connection = await this._constructConnection(payload);
+					this._connection = this._constructConnection(payload);
 					if (
 						!(await confirmWarningDialog(
 							'Are you sure you want to update the existing connection?',
@@ -130,8 +130,8 @@ export default class ConfigPanel extends BasePanel {
 		return this._item.getConnection().getConfiguration();
 	}
 
-	private async _constructConnection(payload: IConnectionConfiguration): Promise<Connection<any, any>> {
-		return Connection.create(payload.name, {
+	private _constructConnection(payload: IConnectionConfiguration): Connection<any, any> {
+		return new Connection(payload.name, {
 			sshTunnelOptions: payload.sshTunnelOptions,
 			db: {
 				// @ts-expect-error

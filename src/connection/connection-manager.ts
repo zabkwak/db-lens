@@ -15,7 +15,7 @@ export default class ConnectionManager {
 			const data = await fs.readFile(configPath, 'utf-8');
 			const connectionsData: Record<string, IConnection<any, any>> = JSON.parse(data);
 			this._connections = await Promise.all(
-				Object.entries(connectionsData).map(async ([name, config]) => Connection.create(name, config)),
+				Object.entries(connectionsData).map(([name, config]) => new Connection(name, config)),
 			);
 		} catch (error: any) {
 			if (error.code === 'ENOENT') {

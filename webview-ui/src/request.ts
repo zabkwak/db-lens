@@ -7,7 +7,7 @@ type TResolve = (message: IPostMessage<keyof IMessagePayload>) => void;
 export default class Request {
 	private static _requests: Map<string, TResolve> = new Map();
 
-	public static handleMessage(message: IPostMessage<keyof IMessagePayload>): void {
+	public static handleMessage<T extends keyof IMessagePayload>(message: IPostMessage<T>): void {
 		if (!message.requestId) {
 			return;
 		}
