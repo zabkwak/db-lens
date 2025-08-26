@@ -1,13 +1,14 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
-    "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "types": ["mocha", "node"]
-  },
-  "include": ["src/**/*.ts"]
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es2020",
+		"outDir": "dist",
+		"rootDir": "src",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"types": ["mocha", "node"],
+		"sourceMap": true
+	},
+	"include": ["src/**/*.ts"]
 }

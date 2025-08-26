@@ -196,7 +196,6 @@ export default class SSHTunnel {
 			// sshCommand = 'C:\\Windows\\System32\\wsl.exe'; // WSL SSH path
 		}
 		if (passphrase) {
-			console.log(['sshpass', '-p', passphrase, sshCommand, ...args].join(' '));
 			return {
 				ssh: 'sshpass',
 				args: ['-p', `${passphrase}`, sshCommand, ...args],
