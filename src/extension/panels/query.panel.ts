@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { EQueryCommand, IPostMessage } from '../../../shared/types';
 import { isCommand } from '../../../shared/utils';
-import { IQueryResult } from '../../drivers/base';
+import { IQueryResult } from '../../drivers/interfaces';
 import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
 import { confirmErrorDialog, confirmWarningDialog, showError, showInfo } from '../utils';
 import BasePanel from './base.panel';

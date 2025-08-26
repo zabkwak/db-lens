@@ -1,4 +1,5 @@
-import BaseDriver, { ICollectionPropertyDescription } from '../../../drivers/base';
+import BaseDriver from '../../../drivers/base';
+import { ICollectionPropertyDescription } from '../../../drivers/interfaces';
 import BaseDataManager from './base.data-manager';
 
 export default class PropertiesDataManager extends BaseDataManager<ICollectionPropertyDescription> {

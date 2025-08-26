@@ -2,6 +2,12 @@ import * as vscode from 'vscode';
 import BaseDataManager from '../data-managers/base.data-manager';
 import TreeItem from './tree-item';
 
+export interface IDataTreeItemDescriptor {
+	label: string;
+	collapsibleState: vscode.TreeItemCollapsibleState;
+	icon: string;
+}
+
 export default abstract class DataTreeItem<T> extends TreeItem {
 	private _dataManager: BaseDataManager<T>;
 
@@ -27,14 +33,6 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 		}
 	}
 
-	public hasError(): boolean {
-		return this._error !== null;
-	}
-
-	public hasData(): boolean {
-		return this.getData() !== null;
-	}
-
 	public isLoading(): boolean {
 		return this._loading;
 	}
@@ -43,8 +41,9 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 		return this._error;
 	}
 
-	public getData(): T[] | null {
-		return this._dataManager.getData();
+	public getData(): IDataTreeItemDescriptor[] | null {
+		const data = this._dataManager.getData();
+		return data ? data.map((item) => this._describeDataItem(item)) : null;
 	}
 
 	public getIcon(): vscode.ThemeIcon | undefined {
@@ -55,4 +54,6 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 	}
 
 	protected abstract _getIcon(): vscode.ThemeIcon | undefined;
+
+	protected abstract _describeDataItem(item: T): IDataTreeItemDescriptor;
 }

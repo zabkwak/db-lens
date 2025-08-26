@@ -2,11 +2,13 @@ import { Pool, PoolClient, types } from 'pg';
 import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import Password from '../password-providers/password';
-import BaseDriver, {
+import BaseDriver from './base';
+import {
 	ICollectionPropertyDescription,
 	IQueryResult,
 	IQueryResultCollectionPropertyDescription,
-} from './base';
+	IViewDriver,
+} from './interfaces';
 
 export interface IPostgresCredentials {
 	host: string;
@@ -31,7 +33,7 @@ types.setTypeParser(1082, (val) => val);
 types.setTypeParser(1114, (val) => val);
 types.setTypeParser(1184, (val) => val);
 
-export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> {
+export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> implements IViewDriver {
 	private _pool: Pool | null = null;
 
 	private _password: Password | null = null;
@@ -113,6 +115,14 @@ WHERE
 				isPrimaryKey: record.is_primary_key,
 			};
 		});
+	}
+
+	public async getViews(): Promise<string[]> {
+		const { data } = await this._query<{ viewname: string }>(
+			`SELECT viewname FROM pg_catalog.pg_views WHERE schemaname = current_schema() order by viewname asc`,
+			true,
+		);
+		return data.map((row) => row.viewname);
 	}
 
 	public query<T>(query: string): Promise<IQueryResult<T>> {

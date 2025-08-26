@@ -243,6 +243,36 @@ describe('PostgreSQL Driver', () => {
 		});
 	});
 
+	describe('.getViews', () => {
+		const postgres = new PostgresDriver(
+			{
+				host: 'localhost',
+				port: 5432,
+				username: 'db-lens',
+				database: 'postgres',
+				schema: 'public',
+				disableSsl: true,
+			},
+			new ConfigPasswordProvider({
+				password: 'test',
+			}),
+		);
+
+		beforeEach(async () => {
+			await postgres.connect();
+		});
+
+		afterEach(async () => {
+			await postgres.close();
+		});
+
+		it('should return list of views', async () => {
+			const collections = await postgres.getViews();
+			expect(collections).to.be.an('array');
+			expect(collections).to.deep.equal([]);
+		});
+	});
+
 	describe('.describeCollection', () => {
 		const postgres = new PostgresDriver(
 			{
