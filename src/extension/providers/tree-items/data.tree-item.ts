@@ -8,6 +8,12 @@ export interface IDataTreeItemDescriptor {
 	icon: string;
 }
 
+export interface IDataTreeItemConfig {
+	loading: string;
+	noData: string;
+	error: string;
+}
+
 export default abstract class DataTreeItem<T> extends TreeItem {
 	private _dataManager: BaseDataManager<T>;
 
@@ -51,6 +57,19 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 			return new vscode.ThemeIcon('loading~spin');
 		}
 		return this._getIcon();
+	}
+
+	public getConfig(): IDataTreeItemConfig {
+		const label = this._getConfigLabel();
+		return {
+			loading: `Loading ${label}...`,
+			noData: `No ${label} found`,
+			error: `Failed to load ${label}`,
+		};
+	}
+
+	protected _getConfigLabel(): string {
+		return 'data';
 	}
 
 	protected abstract _getIcon(): vscode.ThemeIcon | undefined;

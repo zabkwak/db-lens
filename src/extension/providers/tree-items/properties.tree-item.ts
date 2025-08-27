@@ -11,6 +11,10 @@ export default class PropertiesTreeItem extends DataTreeItem<ICollectionProperty
 		};
 	}
 
+	protected _getConfigLabel(): string {
+		return 'properties';
+	}
+
 	protected _getIcon(): vscode.ThemeIcon | undefined {
 		return new vscode.ThemeIcon('symbol-property');
 	}

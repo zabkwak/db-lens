@@ -1,26 +1,20 @@
 import * as vscode from 'vscode';
 import ConnectionManager from '../../connection/connection-manager';
-import { hasDriverGetViews } from '../../drivers/utils';
+import { isIndexesDriver, isViewsDriver } from '../../drivers/utils';
 import Logger from '../../logger';
-import { showInfo } from '../utils';
+import { showError, showInfo } from '../utils';
 import CollectionsDataManager from './data-managers/collections.data-manager';
+import IndexesDataManager from './data-managers/indexes.data-manager';
 import PropertiesDataManager from './data-managers/properties.data-manager';
 import ViewsDataManager from './data-managers/views.data-manager';
 import CollectionTreeItem from './tree-items/collection.tree-item';
 import CollectionsTreeItem from './tree-items/collections.tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import DataTreeItem, { IDataTreeItemDescriptor } from './tree-items/data.tree-item';
-import LoadingTreeItem from './tree-items/loading.tree-item';
+import IndexesTreeItem from './tree-items/indexes.tree-item';
 import PropertiesTreeItem from './tree-items/properties.tree-item';
 import TreeItem from './tree-items/tree-item';
 import ViewsTreeItem from './tree-items/views.tree-item';
-import WarningTreeItem from './tree-items/warning.tree-item';
-
-interface IDataTreeItemConfig {
-	loading?: string;
-	noData?: string;
-	error?: string;
-}
 
 export default class ConnectionTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 	private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined>();
@@ -45,10 +39,10 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		const connections = ConnectionManager.getConnections();
 		if (!connections) {
 			this._loadConnections();
-			return [new LoadingTreeItem()];
+			return [TreeItem.loading()];
 		}
 		if (!connections.length) {
-			return [new WarningTreeItem('No connections found')];
+			return [TreeItem.warning('No connections found')];
 		}
 		if (!element) {
 			return connections.map((connection) => new ConnectionTreeItem(connection));
@@ -59,14 +53,8 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (element instanceof CollectionTreeItem) {
 			return this.getCollectionChildren(element);
 		}
-		if (element instanceof PropertiesTreeItem) {
-			return this.getPropertiesChildren(element);
-		}
 		if (element instanceof CollectionsTreeItem) {
 			return this.getCollectionsChildren(element);
-		}
-		if (element instanceof ViewsTreeItem) {
-			return this.getDataTreeItemChildren(element, 'views');
 		}
 		if (element instanceof DataTreeItem) {
 			return this.getDataTreeItemChildren(element);
@@ -77,7 +65,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	public getConnectionChildren(element: ConnectionTreeItem<any, any>): TreeItem[] {
 		const connection = element.getConnection();
 		if (connection.failed()) {
-			return [new WarningTreeItem(`Connection failed: ${connection.getName()}`)];
+			return [TreeItem.warning(`Connection failed: ${connection.getName()}`)];
 		}
 		if (connection.isConnected()) {
 			const driver = connection.getDriver();
@@ -85,7 +73,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			const children: TreeItem[] = [
 				new CollectionsTreeItem('Tables', driver, new CollectionsDataManager(connection)),
 			];
-			if (hasDriverGetViews(driver)) {
+			if (isViewsDriver(driver)) {
 				children.push(new ViewsTreeItem('Views', new ViewsDataManager(driver)));
 			}
 			return children;
@@ -93,48 +81,31 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (!connection.isConnected() && !connection.isConnecting()) {
 			this.connect(element);
 		}
-		return [new LoadingTreeItem('Connecting...')];
+		return [TreeItem.loading('Connecting...')];
 	}
 
 	public getCollectionsChildren(element: CollectionsTreeItem): TreeItem[] {
-		return this.getDataTreeItemChildren(
-			element,
-			{
-				loading: 'Loading collections...',
-				noData: 'No collections found',
-				error: 'Failed to load collections',
-			},
-			(item) => new CollectionTreeItem(item.label, element.getDriver()),
-		);
+		return this.getDataTreeItemChildren(element, (item) => new CollectionTreeItem(item.label, element.getDriver()));
 	}
 
 	public getDataTreeItemChildren<T>(element: DataTreeItem<T>): TreeItem[];
-	public getDataTreeItemChildren<T>(element: DataTreeItem<T>, config: IDataTreeItemConfig): TreeItem[];
-	public getDataTreeItemChildren<T>(element: DataTreeItem<T>, label: string): TreeItem[];
 	public getDataTreeItemChildren<T>(
 		element: DataTreeItem<T>,
-		config: IDataTreeItemConfig,
 		mapper: (item: IDataTreeItemDescriptor) => TreeItem,
 	): TreeItem[];
 	public getDataTreeItemChildren<T>(
 		element: DataTreeItem<T>,
-		label: string,
-		mapper: (item: IDataTreeItemDescriptor) => TreeItem,
-	): TreeItem[];
-	public getDataTreeItemChildren<T>(
-		element: DataTreeItem<T>,
-		config?: IDataTreeItemConfig | string,
 		mapper?: (item: IDataTreeItemDescriptor) => TreeItem,
 	): TreeItem[] {
-		const c = this._constructDataTreeItemConfig(config);
+		const c = element.getConfig();
 		const error = element.getError();
 		if (error) {
-			return [new WarningTreeItem(`${c.error || 'Failed to load data'}: ${error.message}`)];
+			return [TreeItem.warning(`${c.error}: ${error.message}`)];
 		}
 		const data = element.getData();
 		if (data) {
 			if (!data.length) {
-				return [new WarningTreeItem(c.noData || 'No data found')];
+				return [TreeItem.warning(c.noData)];
 			}
 			return data.map((item) => {
 				if (mapper) {
@@ -146,22 +117,19 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (!element.isLoading()) {
 			this._loadData(element);
 		}
-		return [new LoadingTreeItem(c.loading || 'Loading data...')];
+		return [TreeItem.loading(c.loading)];
 	}
 
 	public getCollectionChildren(element: CollectionTreeItem): TreeItem[] {
-		return [
+		const driver = element.getDriver();
+		const children: TreeItem[] = [
 			// TODO different name for no-sql
-			new PropertiesTreeItem('Columns', new PropertiesDataManager(element.label as string, element.getDriver())),
+			new PropertiesTreeItem('Columns', new PropertiesDataManager(element.label as string, driver)),
 		];
-	}
-
-	public getPropertiesChildren(element: PropertiesTreeItem): TreeItem[] {
-		return this.getDataTreeItemChildren(element, {
-			loading: 'Loading properties...',
-			noData: 'No properties found',
-			error: 'Failed to load properties',
-		});
+		if (isIndexesDriver(driver)) {
+			children.push(new IndexesTreeItem('Indexes', new IndexesDataManager(element.label as string, driver)));
+		}
+		return children;
 	}
 
 	public async connect(item: ConnectionTreeItem<any, any>): Promise<void> {
@@ -177,7 +145,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			connection.close(true);
 			this.setItemContextValue(item, EConnectionContextValue.DEFAULT);
 			Logger.error('connection', `Failed to connect to ${connection.getName()}`, { error });
-			vscode.window.showErrorMessage(`Failed to connect: ${error.message}`);
+			showError(`Failed to connect: ${error.message}`);
 		}
 	}
 
@@ -191,12 +159,12 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		} catch (error: any) {
 			this.setItemContextValue(item, EConnectionContextValue.DEFAULT);
 			Logger.error('connection', `Failed to disconnect from ${connection.getName()}`, { error });
-			vscode.window.showErrorMessage(`Failed to disconnect: ${error.message}`);
+			showError(`Failed to disconnect: ${error.message}`);
 		}
 	}
 
 	private async _loadConnections() {
-		this.refresh();
+		// TODO handle errors
 		await ConnectionManager.load();
 		this.refresh();
 	}
@@ -214,24 +182,8 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			this.refresh(item);
 		} catch (error: any) {
 			Logger.error('data', `Failed to load data for ${item.label}`, { error });
-			vscode.window.showErrorMessage(`Failed to load data: ${error.message}`);
+			showError(`Failed to load data: ${error.message}`);
+			this.refresh(item);
 		}
-	}
-	private _constructDataTreeItemConfig(label?: IDataTreeItemConfig | string): IDataTreeItemConfig {
-		if (!label) {
-			return {
-				loading: 'Loading data...',
-				noData: 'No data found',
-				error: 'Failed to load data',
-			};
-		}
-		if (typeof label === 'string') {
-			return {
-				loading: `Loading ${label}...`,
-				noData: `No ${label} found`,
-				error: `Failed to load ${label}`,
-			};
-		}
-		return label;
 	}
 }

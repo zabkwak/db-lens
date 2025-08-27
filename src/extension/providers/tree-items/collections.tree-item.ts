@@ -15,6 +15,10 @@ export default class CollectionsTreeItem extends DataTreeItem<string> {
 		return this._driver;
 	}
 
+	protected _getConfigLabel(): string {
+		return 'collections';
+	}
+
 	protected _describeDataItem(item: string): IDataTreeItemDescriptor {
 		return {
 			label: item,

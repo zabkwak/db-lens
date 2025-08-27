@@ -1,10 +1,10 @@
-import { IViewDriver } from '../../../drivers/interfaces';
+import { IViewsDriver } from '../../../drivers/interfaces';
 import BaseDataManager from './base.data-manager';
 
 export default class ViewsDataManager extends BaseDataManager<string> {
-	private _driver: IViewDriver;
+	private _driver: IViewsDriver;
 
-	constructor(driver: IViewDriver) {
+	constructor(driver: IViewsDriver) {
 		super();
 		this._driver = driver;
 	}
