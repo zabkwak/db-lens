@@ -1,6 +1,16 @@
 import * as vscode from 'vscode';
 
 export default class TreeItem extends vscode.TreeItem {
+	public static loading(): TreeItem;
+	public static loading(label: string): TreeItem;
+	public static loading(label: string = 'Loading...'): TreeItem {
+		return new TreeItem(label, vscode.TreeItemCollapsibleState.None, 'loading~spin');
+	}
+
+	public static warning(label: string): TreeItem {
+		return new TreeItem(label, vscode.TreeItemCollapsibleState.None, 'warning');
+	}
+
 	private _icon: string | undefined;
 
 	constructor(label: string);

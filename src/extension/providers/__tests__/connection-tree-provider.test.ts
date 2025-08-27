@@ -6,7 +6,7 @@ import { TreeItemCollapsibleState } from 'vscode';
 import Connection from '../../../connection/connection';
 import ConnectionManager from '../../../connection/connection-manager';
 import BaseDriver from '../../../drivers/base';
-import { ICollectionPropertyDescription, IQueryResult, IViewDriver } from '../../../drivers/interfaces';
+import { ICollectionPropertyDescription, IQueryResult, IViewsDriver } from '../../../drivers/interfaces';
 import BasePasswordProvider from '../../../password-providers/base';
 import Password from '../../../password-providers/password';
 import ConnectionTreeProvider from '../connection-tree-provider';
@@ -17,11 +17,9 @@ import CollectionTreeItem from '../tree-items/collection.tree-item';
 import CollectionsTreeItem from '../tree-items/collections.tree-item';
 import ConnectionTreeItem from '../tree-items/connection.tree-item';
 import DataTreeItem from '../tree-items/data.tree-item';
-import LoadingTreeItem from '../tree-items/loading.tree-item';
 import PropertiesTreeItem from '../tree-items/properties.tree-item';
 import TreeItem from '../tree-items/tree-item';
 import ViewsTreeItem from '../tree-items/views.tree-item';
-import WarningTreeItem from '../tree-items/warning.tree-item';
 
 // TODO maybe move this to unit tests entirely? it doesn't need to vscode api .. or maybe use it as full scale integration test with the composed docker service
 
@@ -51,7 +49,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(loadStub.called).to.be.true;
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(LoadingTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading...');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -63,7 +61,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(loadStub.notCalled).to.be.true;
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(WarningTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No connections found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -154,7 +152,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(WarningTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Connection failed: Connection 1');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -196,7 +194,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(LoadingTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Connecting...');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -367,7 +365,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(LoadingTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading collections...');
 			});
 
@@ -414,7 +412,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(WarningTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No collections found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -480,7 +478,7 @@ describe('ConnectionTreeProvider', () => {
 		});
 
 		describe('ViewsTreeItem', () => {
-			class MockDriver extends BaseDriver<{ hasViews?: boolean }, {}> implements IViewDriver {
+			class MockDriver extends BaseDriver<{ hasViews?: boolean }, {}> implements IViewsDriver {
 				public connect(): Promise<void> {
 					throw new Error('Method not implemented.');
 				}
@@ -534,7 +532,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(LoadingTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading views...');
 			});
 
@@ -548,7 +546,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
-				expect(child).to.be.instanceOf(WarningTreeItem);
+				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No views found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -702,7 +700,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
 				const [child1] = children;
-				expect(child1).to.be.instanceOf(LoadingTreeItem);
+				expect(child1).to.be.instanceOf(TreeItem);
 				expect(child1.label).to.equal('Loading properties...');
 				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});
@@ -721,7 +719,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
 				const [child1] = children;
-				expect(child1).to.be.instanceOf(WarningTreeItem);
+				expect(child1).to.be.instanceOf(TreeItem);
 				expect(child1.label).to.equal('Failed to load properties: Failed to describe collection');
 				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 			});

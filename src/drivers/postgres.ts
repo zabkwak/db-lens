@@ -5,9 +5,10 @@ import Password from '../password-providers/password';
 import BaseDriver from './base';
 import {
 	ICollectionPropertyDescription,
+	IIndexDescription,
 	IQueryResult,
 	IQueryResultCollectionPropertyDescription,
-	IViewDriver,
+	ISqlDriver,
 } from './interfaces';
 
 export interface IPostgresCredentials {
@@ -28,12 +29,20 @@ interface ICollectionPropertyDescriptionRecord {
 	is_primary_key: boolean;
 }
 
+interface ICollectionIndexRecord {
+	name: string;
+	kind: 'PRIMARY KEY' | 'UNIQUE' | 'INDEX';
+	type: string;
+	columns: string;
+	condition: string | null;
+}
+
 // OID 1082 = DATE, 1114 = TIMESTAMP, 1184 = TIMESTAMPTZ
 types.setTypeParser(1082, (val) => val);
 types.setTypeParser(1114, (val) => val);
 types.setTypeParser(1184, (val) => val);
 
-export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> implements IViewDriver {
+export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> implements ISqlDriver {
 	private _pool: Pool | null = null;
 
 	private _password: Password | null = null;
@@ -123,6 +132,44 @@ WHERE
 			true,
 		);
 		return data.map((row) => row.viewname);
+	}
+
+	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
+		const { data } = await this._query<ICollectionIndexRecord>(
+			`SELECT
+    i.relname AS name,
+    CASE
+        WHEN idx.indisprimary THEN 'PRIMARY KEY'
+        WHEN idx.indisunique  THEN 'UNIQUE'
+        ELSE 'INDEX'
+    END AS kind,
+    am.amname AS type,
+    array_to_string(
+        ARRAY(
+            SELECT pg_get_indexdef(idx.indexrelid, k + 1, TRUE)
+            FROM generate_subscripts(idx.indkey, 1) AS k
+            ORDER BY k
+        ), ','
+    ) AS columns,
+    pg_get_expr(idx.indpred, idx.indrelid) AS condition
+FROM pg_index idx
+JOIN pg_class i ON i.oid = idx.indexrelid
+JOIN pg_class t ON t.oid = idx.indrelid
+JOIN pg_am am ON i.relam = am.oid
+JOIN pg_namespace n ON n.oid = t.relnamespace
+WHERE t.relname = $1
+  AND n.nspname = current_schema();`,
+			true,
+			[collectionName],
+		);
+		return data.map((row): IIndexDescription => {
+			return {
+				name: row.name,
+				kind: row.kind,
+				type: row.type,
+				columns: row.columns.split(','),
+			};
+		});
 	}
 
 	public query<T>(query: string): Promise<IQueryResult<T>> {

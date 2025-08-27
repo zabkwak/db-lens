@@ -23,6 +23,19 @@ export interface ICollectionPropertyDescription {
 	isPrimaryKey: boolean;
 }
 
-export interface IViewDriver {
+export interface IViewsDriver {
 	getViews(): Promise<string[]>;
+}
+
+export interface IIndexesDriver {
+	getIndexes(collectionName: string): Promise<IIndexDescription[]>;
+}
+
+export interface ISqlDriver extends IViewsDriver, IIndexesDriver {}
+
+export interface IIndexDescription {
+	name: string;
+	kind: 'PRIMARY KEY' | 'UNIQUE' | 'INDEX';
+	type: string;
+	columns: string[];
 }

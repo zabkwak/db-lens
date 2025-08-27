@@ -273,6 +273,55 @@ describe('PostgreSQL Driver', () => {
 		});
 	});
 
+	describe('.getIndexes', () => {
+		const postgres = new PostgresDriver(
+			{
+				host: 'localhost',
+				port: 5432,
+				username: 'db-lens',
+				database: 'postgres',
+				schema: 'public',
+				disableSsl: true,
+			},
+			new ConfigPasswordProvider({
+				password: 'test',
+			}),
+		);
+
+		beforeEach(async () => {
+			await postgres.connect();
+		});
+
+		afterEach(async () => {
+			await postgres.close();
+		});
+
+		it('should return list of indexes for users table', async () => {
+			const collections = await postgres.getIndexes('users');
+			expect(collections).to.be.an('array');
+			expect(collections).to.deep.equal([
+				{
+					name: 'users_pkey',
+					kind: 'PRIMARY KEY',
+					type: 'btree',
+					columns: ['id'],
+				},
+				{
+					name: 'users_username_key',
+					kind: 'UNIQUE',
+					type: 'btree',
+					columns: ['username'],
+				},
+				{
+					name: 'users_email_key',
+					kind: 'UNIQUE',
+					type: 'btree',
+					columns: ['email'],
+				},
+			]);
+		});
+	});
+
 	describe('.describeCollection', () => {
 		const postgres = new PostgresDriver(
 			{

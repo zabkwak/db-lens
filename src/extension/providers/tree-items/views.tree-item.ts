@@ -10,6 +10,10 @@ export default class ViewsTreeItem extends DataTreeItem<string> {
 		};
 	}
 
+	protected _getConfigLabel(): string {
+		return 'views';
+	}
+
 	protected _getIcon(): vscode.ThemeIcon | undefined {
 		return new vscode.ThemeIcon('preview');
 	}
