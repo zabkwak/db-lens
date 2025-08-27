@@ -8,5 +8,6 @@ tmp
 .nyc_output
 .nyc_output_combined
 coverage
+coverage-extension
 
 .DS_Store
