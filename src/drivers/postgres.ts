@@ -58,6 +58,7 @@ export default class PostgresDriver<U>
 		this._connected = false;
 		Logger.info(this, `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
 		await this._connect();
+		this._connected = true;
 	}
 
 	public async getCollections(): Promise<string[]> {
