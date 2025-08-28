@@ -41,6 +41,23 @@ export function activate(context: vscode.ExtensionContext) {
 				ViewManager.getConnectionTreeProvider().refresh();
 			}
 		}),
+		vscode.commands.registerCommand('db-lens.copyValue', async (args: any) => {
+			const { value } = args;
+			if (value) {
+				await vscode.env.clipboard.writeText(value);
+				vscode.window.showInformationMessage('Value copied to clipboard');
+			}
+		}),
+		vscode.commands.registerCommand('db-lens.viewRowAsJSON', async (args: any) => {
+			const { row } = args;
+			if (row) {
+				const document = await vscode.workspace.openTextDocument({
+					content: JSON.stringify(row, null, 4),
+					language: 'json',
+				});
+				await vscode.window.showTextDocument(document, { preview: true });
+			}
+		}),
 	);
 
 	// TODO delete

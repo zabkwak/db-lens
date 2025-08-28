@@ -1,13 +1,14 @@
 import { VSCodeDataGrid, VSCodeDataGridCell, VSCodeDataGridRow } from '@vscode/webview-ui-toolkit/react';
 import { JSX, useEffect, useState } from 'react';
 import { IColumn } from '../../../shared/types';
+import { classNames, pluralize } from '../utils';
 import FormControl from './form-control';
 import Loader from './loader';
 import './table.scss';
 
 interface IProps<T extends object> {
-	data: T[];
-	columns: IColumn[];
+	data?: T[];
+	columns?: IColumn[];
 	loading?: boolean;
 }
 
@@ -25,15 +26,21 @@ function getValue(value: any): string {
 }
 
 const MIN_EM = 7;
-const MAX_EM = 50;
+const MAX_EM = Number.MAX_SAFE_INTEGER;
 const EM_COEFFICIENT = 1;
 
 export default function Table<T extends object>(props: IProps<T>): JSX.Element {
 	const [columnLayout, setColumnLayout] = useState<string>('');
 	const [wrap, setWrap] = useState(false);
 	useEffect(() => {
+		if (!props.data || !props.columns) {
+			return;
+		}
 		const data = props.data.reduce(
 			(acc, row) => {
+				if (!props.columns) {
+					return acc;
+				}
 				props.columns.forEach((column, index) => {
 					const columnName = column.name.toLowerCase();
 					// @ts-expect-error unknown type
@@ -66,17 +73,31 @@ export default function Table<T extends object>(props: IProps<T>): JSX.Element {
 						className="data-grid"
 						gridTemplateColumns={wrap ? undefined : columnLayout}
 					>
-						<VSCodeDataGridRow row-type="header">
-							{props.columns.map((column, index) => (
+						<VSCodeDataGridRow
+							row-type="sticky-header"
+							className={classNames('sticky-header', 'row', !wrap ? 'max-content' : null)}
+						>
+							{props.columns?.map((column, index) => (
 								<VSCodeDataGridCell key={index} cell-type="columnheader" grid-column={`${index + 1}`}>
 									{column.name}
 								</VSCodeDataGridCell>
 							))}
 						</VSCodeDataGridRow>
-						{props.data.map((row, index) => (
-							<VSCodeDataGridRow key={index}>
-								{props.columns.map((column, colIndex) => (
-									<VSCodeDataGridCell key={colIndex} grid-column={`${colIndex + 1}`}>
+						{props.data?.map((row, index) => (
+							<VSCodeDataGridRow key={index} className={classNames('row', !wrap ? 'max-content' : null)}>
+								{props.columns?.map((column, colIndex) => (
+									<VSCodeDataGridCell
+										key={colIndex}
+										grid-column={`${colIndex + 1}`}
+										data-vscode-context={JSON.stringify({
+											type: 'table-cell',
+											columnName: column.name,
+											// @ts-expect-error unknown type
+											value: getValue(row[column.name.toLowerCase()]),
+											row,
+											preventDefaultContextMenuItems: true,
+										})}
+									>
 										{/* @ts-expect-error unknown type */}
 										{getValue(row[column.name.toLowerCase()])}
 									</VSCodeDataGridCell>
@@ -86,6 +107,9 @@ export default function Table<T extends object>(props: IProps<T>): JSX.Element {
 					</VSCodeDataGrid>
 				</div>
 			)}
+			<div className="table-footer">
+				{props.data && !props.loading ? `Found ${pluralize(props.data.length, 'row')}` : null}
+			</div>
 		</div>
 	);
 }
