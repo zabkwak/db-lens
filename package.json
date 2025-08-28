@@ -55,6 +55,14 @@
 				"command": "db-lens.removeConnection",
 				"title": "Remove Connection",
 				"icon": "$(trash)"
+			},
+			{
+				"command": "db-lens.copyValue",
+				"title": "Copy value"
+			},
+			{
+				"command": "db-lens.viewRowAsJSON",
+				"title": "View Row as JSON"
 			}
 		],
 		"viewsContainers": {
@@ -112,6 +120,18 @@
 			"view/title": [
 				{
 					"command": "db-lens.addConnection",
+					"group": "navigation"
+				}
+			],
+			"webview/context": [
+				{
+					"command": "db-lens.copyValue",
+					"when": "webviewId == 'db-lens.queryEditor' && type == 'table-cell'",
+					"group": "navigation"
+				},
+				{
+					"command": "db-lens.viewRowAsJSON",
+					"when": "webviewId == 'db-lens.queryEditor' && type == 'table-cell'",
 					"group": "navigation"
 				}
 			]

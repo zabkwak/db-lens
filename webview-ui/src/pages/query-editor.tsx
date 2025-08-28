@@ -1,4 +1,4 @@
-import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
+import { VSCodeButton, VSCodeDivider, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
 import { IMessagePayload } from '../../../shared/types';
 import Table from '../components/table';
@@ -14,7 +14,7 @@ const QueryEditor: React.FC = () => {
 	async function handleRunQuery(): Promise<void> {
 		setIsLoading(true);
 		try {
-			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000);
+			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000, 'test');
 			setResult(result.data);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
@@ -54,9 +54,9 @@ const QueryEditor: React.FC = () => {
 					Run Query
 				</VSCodeButton>
 			</section>
-			<hr />
+			<VSCodeDivider />
 			<section className="result-section">
-				<Table data={result?.data || []} columns={result?.columns || []} loading={isLoading} />
+				<Table data={result?.data} columns={result?.columns} loading={isLoading} />
 			</section>
 		</div>
 	);
