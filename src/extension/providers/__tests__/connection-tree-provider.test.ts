@@ -479,11 +479,8 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('ViewsTreeItem', () => {
 			class MockDriver extends BaseDriver<{ hasViews?: boolean }, {}> implements IViewsDriver {
-				public connect(): Promise<void> {
-					throw new Error('Method not implemented.');
-				}
-				public close(): Promise<void> {
-					throw new Error('Method not implemented.');
+				public reconnect(): Promise<void> {
+					throw new Error('Method not implemented');
 				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
@@ -494,14 +491,23 @@ describe('ConnectionTreeProvider', () => {
 				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
-				public isConnected(): boolean {
-					throw new Error('Method not implemented.');
-				}
 				public async getViews(): Promise<string[]> {
 					if (this._credentials.hasViews) {
 						return ['View 1', 'View 2'];
 					}
 					return [];
+				}
+				public getName(): string {
+					return 'Mock SQL';
+				}
+				public getTag(): string {
+					return 'mocksql';
+				}
+				protected _connect(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _close(): Promise<void> {
+					throw new Error('Method not implemented.');
 				}
 			}
 			class MockPasswordProvider extends BasePasswordProvider<{}> {
@@ -580,11 +586,8 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('CollectionTreeItem', () => {
 			class MockDriver extends BaseDriver<{}, {}> {
-				public connect(): Promise<void> {
-					throw new Error('Method not implemented.');
-				}
-				public close(): Promise<void> {
-					throw new Error('Method not implemented.');
+				public reconnect(): Promise<void> {
+					throw new Error('Method not implemented');
 				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
@@ -595,7 +598,16 @@ describe('ConnectionTreeProvider', () => {
 				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
-				public isConnected(): boolean {
+				public getName(): string {
+					return 'Mock SQL';
+				}
+				public getTag(): string {
+					return 'mocksql';
+				}
+				protected _connect(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _close(): Promise<void> {
 					throw new Error('Method not implemented.');
 				}
 			}
@@ -638,11 +650,8 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('PropertiesTreeItem', () => {
 			class MockDriver extends BaseDriver<{ validCollection?: boolean }, {}> {
-				public connect(): Promise<void> {
-					throw new Error('Method not implemented.');
-				}
-				public close(): Promise<void> {
-					throw new Error('Method not implemented.');
+				public reconnect(): Promise<void> {
+					throw new Error('Method not implemented');
 				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
@@ -653,7 +662,16 @@ describe('ConnectionTreeProvider', () => {
 				public query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
-				public isConnected(): boolean {
+				public getName(): string {
+					return 'Mock SQL';
+				}
+				public getTag(): string {
+					return 'mocksql';
+				}
+				protected _connect(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _close(): Promise<void> {
 					throw new Error('Method not implemented.');
 				}
 			}

@@ -18,6 +18,24 @@ services:
             start_period: 5s
         volumes:
             - ./db/init.postgre.sql:/docker-entrypoint-initdb.d/init.sql
+    mysql:
+        image: mysql:8.0
+        container_name: mysql
+        ports:
+            - '3306:3306'
+        environment:
+            - MYSQL_ROOT_PASSWORD=test
+            - MYSQL_DATABASE=mysql
+            - MYSQL_USER=db-lens
+            - MYSQL_PASSWORD=test
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-ptest']
+            interval: 5s
+            timeout: 3s
+            retries: 5
+            start_period: 5s
+        volumes:
+            - ./db/init.mysql.sql:/docker-entrypoint-initdb.d/init.sql
     ssh_server:
         image: linuxserver/openssh-server:latest
         container_name: ssh_server
