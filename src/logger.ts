@@ -15,32 +15,50 @@ const colors = {
 	bold: '\x1b[1m',
 };
 
+export interface ILoggingInstance {
+	getTag(): string;
+}
+
 export default class Logger {
 	private static _outputChannel = vscode.window.createOutputChannel('DB Lens');
 
 	public static info(tag: string, message: string): void;
+	public static info(instance: ILoggingInstance, message: string): void;
 	public static info<T extends object>(tag: string, message: string, data: T): void;
-	public static info<T extends object>(tag: string, message: string, data?: T): void {
-		this.log(tag, ELevel.INFO, message, data as T);
+	public static info<T extends object>(instance: ILoggingInstance, message: string, data: T): void;
+	public static info<T extends object>(tag: string | ILoggingInstance, message: string, data?: T): void {
+		this.log(tag as ILoggingInstance, ELevel.INFO, message, data as T);
 	}
 
 	public static warn(tag: string, message: string): void;
+	public static warn(instance: ILoggingInstance, message: string): void;
 	public static warn<T extends object>(tag: string, message: string, data: T): void;
-	public static warn<T extends object>(tag: string, message: string, data?: T): void {
-		this.log(tag, ELevel.WARN, message, data as T);
+	public static warn<T extends object>(instance: ILoggingInstance, message: string, data: T): void;
+	public static warn<T extends object>(tag: string | ILoggingInstance, message: string, data?: T): void {
+		this.log(tag as ILoggingInstance, ELevel.WARN, message, data as T);
 	}
 
 	public static error(tag: string, message: string): void;
+	public static error(instance: ILoggingInstance, message: string): void;
 	public static error<T extends object>(tag: string, message: string, data: T): void;
-	public static error<T extends object>(tag: string, message: string, data?: T): void {
-		this.log(tag, ELevel.ERROR, message, data as T);
+	public static error<T extends object>(instance: ILoggingInstance, message: string, data: T): void;
+	public static error<T extends object>(tag: string | ILoggingInstance, message: string, data?: T): void {
+		this.log(tag as ILoggingInstance, ELevel.ERROR, message, data as T);
 		// vscode.window.showErrorMessage(`Error in ${tag}: ${message}`);
 	}
 
 	public static log(tag: string, level: ELevel, message: string): void;
+	public static log(instance: ILoggingInstance, level: ELevel, message: string): void;
 	public static log<T extends object>(tag: string, level: ELevel, message: string, data: T): void;
-	public static log<T extends object>(tag: string, level: ELevel, message: string, data?: T): void {
-		this._writeToOutput(level, `${new Date().toISOString()} [${level}] [${tag}] ${message}`);
+	public static log<T extends object>(instance: ILoggingInstance, level: ELevel, message: string, data: T): void;
+	public static log<T extends object>(
+		tag: string | ILoggingInstance,
+		level: ELevel,
+		message: string,
+		data?: T,
+	): void {
+		const tagString = typeof tag === 'string' ? tag : tag.getTag();
+		this._writeToOutput(level, `${new Date().toISOString()} [${level}] [${tagString}] ${message}`);
 		if (data) {
 			const json = JSON.stringify(data, null, 4);
 			const indented = json

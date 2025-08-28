@@ -1,6 +1,6 @@
 import { Pool, PoolClient, types } from 'pg';
 import { EQueryCommand } from '../../shared/types';
-import Logger from '../logger';
+import Logger, { ILoggingInstance } from '../logger';
 import Password from '../password-providers/password';
 import BaseDriver from './base';
 import {
@@ -42,7 +42,10 @@ types.setTypeParser(1082, (val) => val);
 types.setTypeParser(1114, (val) => val);
 types.setTypeParser(1184, (val) => val);
 
-export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, U> implements ISqlDriver {
+export default class PostgresDriver<U>
+	extends BaseDriver<IPostgresCredentials, U>
+	implements ISqlDriver, ILoggingInstance
+{
 	private _pool: Pool | null = null;
 
 	private _password: Password | null = null;
@@ -54,7 +57,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 			return;
 		}
 		await this._connect();
-		Logger.info('postgres', 'Connected to PostgreSQL');
+		Logger.info(this, 'Connected to PostgreSQL');
 	}
 
 	public async reconnect(): Promise<void> {
@@ -63,7 +66,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		}
 		await this._pool.end();
 		this._connected = false;
-		Logger.info('postgres', `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
+		Logger.info(this, `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
 		await this._connect();
 	}
 
@@ -72,7 +75,7 @@ export default class PostgresDriver<U> extends BaseDriver<IPostgresCredentials, 
 		this._pool = null;
 		this._password = null;
 		this._connected = false;
-		Logger.info('postgres', 'Connection closed');
+		Logger.info(this, 'Connection closed');
 	}
 
 	public async getCollections(): Promise<string[]> {
@@ -180,6 +183,10 @@ WHERE t.relname = $1
 		return this._connected;
 	}
 
+	public getTag(): string {
+		return 'postgres';
+	}
+
 	private async _query<T>(query: string): Promise<IQueryResult<T>>;
 	private async _query<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
 	private async _query<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
@@ -191,7 +198,7 @@ WHERE t.relname = $1
 			throw new Error('Password not provided');
 		}
 		if (this._password.isExpired()) {
-			Logger.warn('postgres', 'Password expired, reconnecting...');
+			Logger.warn(this, 'Password expired, reconnecting...');
 			await this.reconnect();
 			return this._query<T>(query, autocommit as boolean, params as any[]);
 		}
@@ -205,7 +212,11 @@ WHERE t.relname = $1
 			await client.query('BEGIN');
 			const { rows, fields, rowCount, command } = await client.query(query, params);
 			const duration = Date.now() - start;
-			Logger.info('query', `Executed query: ${query} in ${duration}ms`);
+			Logger.info('query', `Executed query: ${query}`, {
+				params,
+				duration: `${duration}ms`,
+				rowCount,
+			});
 			const properties = fields.map((field): IQueryResultCollectionPropertyDescription => {
 				const typeName =
 					Object.entries(types.builtins).find(([name, id]) => id === field.dataTypeID)?.[0] || 'unknown';
@@ -261,7 +272,7 @@ WHERE t.relname = $1
 		this._password = await this._passwordProvider.getPassword();
 		const host = this._getHost();
 		const port = this._getPort();
-		Logger.info('postgres', `Connecting to PostgreSQL at ${host}:${port}`);
+		Logger.info(this, `Connecting to PostgreSQL at ${host}:${port}`);
 		this._pool = new Pool({
 			host,
 			port,
@@ -282,7 +293,7 @@ WHERE t.relname = $1
 			this._connected = true;
 		} catch (error: any) {
 			const message = error.message || error.code || 'Unknown error';
-			Logger.error('postgres', `Error connecting to PostgreSQL: ${message}`, {
+			Logger.error(this, `Error connecting to PostgreSQL: ${message}`, {
 				error: {
 					message,
 					...error,
