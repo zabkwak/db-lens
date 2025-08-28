@@ -14,7 +14,7 @@ const QueryEditor: React.FC = () => {
 	async function handleRunQuery(): Promise<void> {
 		setIsLoading(true);
 		try {
-			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000, 'test');
+			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000);
 			setResult(result.data);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
