@@ -29,7 +29,7 @@ services:
             - MYSQL_USER=db-lens
             - MYSQL_PASSWORD=test
         healthcheck:
-            test: ['CMD-SHELL', 'mysqladmin ping -h localhost -u root -ptest']
+            test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-ptest']
             interval: 5s
             timeout: 3s
             retries: 5

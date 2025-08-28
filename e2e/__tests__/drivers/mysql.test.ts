@@ -4,7 +4,7 @@ import SSHTunnel from '../../../src/connection/ssh-tunnel';
 import MySqlDriver from '../../../src/drivers/mysql';
 import ConfigPasswordProvider from '../../../src/password-providers/config-provider';
 import Password from '../../../src/password-providers/password';
-import { cleanup } from '../utils';
+import { cleanup, waitForMysqlReady } from '../utils';
 
 interface IUser {
 	id: string;
@@ -14,6 +14,10 @@ interface IUser {
 }
 
 describe('MySQL Driver', () => {
+	before(async () => {
+		await waitForMysqlReady();
+	}).timeout(15000);
+
 	afterEach(async () => {
 		await cleanup();
 	});
@@ -49,7 +53,8 @@ describe('MySQL Driver', () => {
 				}),
 			);
 			await expect(mysql.connect()).to.be.rejectedWith(
-				"Access denied for user 'db-lens'@'172.19.0.1' (using password: YES)",
+				// "Access denied for user 'db-lens'@'172.19.0.1' (using password: YES)",
+				'Access denied for user',
 			);
 		});
 

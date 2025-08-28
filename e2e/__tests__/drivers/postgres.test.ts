@@ -14,7 +14,7 @@ interface IUser {
 	created_timestamp: string;
 }
 
-describe.skip('PostgreSQL Driver', () => {
+describe('PostgreSQL Driver', () => {
 	afterEach(async () => {
 		await cleanup();
 	});
