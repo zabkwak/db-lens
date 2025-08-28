@@ -50,16 +50,6 @@ export default class PostgresDriver<U>
 
 	private _password: Password | null = null;
 
-	private _connected: boolean = false;
-
-	public async connect(): Promise<void> {
-		if (this._pool) {
-			return;
-		}
-		await this._connect();
-		Logger.info(this, 'Connected to PostgreSQL');
-	}
-
 	public async reconnect(): Promise<void> {
 		if (!this._pool) {
 			throw new Error('Database not connected');
@@ -68,14 +58,6 @@ export default class PostgresDriver<U>
 		this._connected = false;
 		Logger.info(this, `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
 		await this._connect();
-	}
-
-	public async close(): Promise<void> {
-		await this._pool?.end();
-		this._pool = null;
-		this._password = null;
-		this._connected = false;
-		Logger.info(this, 'Connection closed');
 	}
 
 	public async getCollections(): Promise<string[]> {
@@ -179,12 +161,41 @@ WHERE t.relname = $1
 		return this._query<T>(query, false);
 	}
 
-	public isConnected(): boolean {
-		return this._connected;
-	}
-
 	public getTag(): string {
 		return 'postgres';
+	}
+
+	public getName(): string {
+		return 'PostgreSQL';
+	}
+
+	protected async _connect(): Promise<void> {
+		this._password = await this._passwordProvider.getPassword();
+		const host = this._getHost();
+		const port = this._getPort();
+		Logger.info(this, `Connecting to PostgreSQL at ${host}:${port}`);
+		this._pool = new Pool({
+			host,
+			port,
+			user: this._credentials.username,
+			password: this._password.password,
+			database: this._credentials.database,
+			ssl: this._credentials.disableSsl
+				? false
+				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
+			statement_timeout: 30000,
+		});
+		const schema = this._credentials.schema || 'public';
+		this._pool.on('connect', (client) => {
+			client.query(`SET search_path TO ${schema}`);
+		});
+		await this._pool.query('SELECT NOW()');
+	}
+
+	protected async _close(): Promise<void> {
+		await this._pool?.end();
+		this._pool = null;
+		this._password = null;
 	}
 
 	private async _query<T>(query: string): Promise<IQueryResult<T>>;
@@ -262,44 +273,6 @@ WHERE t.relname = $1
 				},
 			});
 			throw error;
-		}
-	}
-
-	private async _connect(): Promise<void> {
-		if (this._sshTunnel && !this._sshTunnel.isOpen()) {
-			throw new Error('SSH tunnel is not open');
-		}
-		this._password = await this._passwordProvider.getPassword();
-		const host = this._getHost();
-		const port = this._getPort();
-		Logger.info(this, `Connecting to PostgreSQL at ${host}:${port}`);
-		this._pool = new Pool({
-			host,
-			port,
-			user: this._credentials.username,
-			password: this._password.password,
-			database: this._credentials.database,
-			ssl: this._credentials.disableSsl
-				? false
-				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
-			statement_timeout: 30000,
-		});
-		const schema = this._credentials.schema || 'public';
-		this._pool.on('connect', (client) => {
-			client.query(`SET search_path TO ${schema}`);
-		});
-		try {
-			await this._pool.query('SELECT NOW()');
-			this._connected = true;
-		} catch (error: any) {
-			const message = error.message || error.code || 'Unknown error';
-			Logger.error(this, `Error connecting to PostgreSQL: ${message}`, {
-				error: {
-					message,
-					...error,
-				},
-			});
-			throw new Error(message);
 		}
 	}
 
