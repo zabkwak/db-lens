@@ -239,6 +239,43 @@ describe('MySQL Driver', () => {
 			});
 		});
 
+		describe('.describeCollection', () => {
+			it('should describe table', async () => {
+				const properties = await mysql.describeCollection('users');
+				expect(properties).to.be.an('array');
+				expect(properties).to.deep.equal([
+					{
+						name: 'id',
+						type: 'varchar(10)',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: true,
+					},
+					{
+						name: 'username',
+						type: 'varchar(50)',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: false,
+					},
+					{
+						name: 'email',
+						type: 'varchar(255)',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: false,
+					},
+					{
+						name: 'created_timestamp',
+						type: 'timestamp',
+						isNullable: false,
+						defaultValue: 'CURRENT_TIMESTAMP',
+						isPrimaryKey: false,
+					},
+				]);
+			});
+		});
+
 		describe('.query', () => {
 			it('should throw a not connected error', async () => {
 				await mysql.close();

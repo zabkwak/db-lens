@@ -29,6 +29,15 @@ export interface IMysqlCredentials {
 	disableSsl?: boolean;
 }
 
+interface ICollectionPropertyDescriptionRecord {
+	Field: string;
+	Type: string;
+	Default: string | null;
+	Extra: string;
+	Key: string;
+	Null: 'YES' | 'NO';
+}
+
 interface ITransformResult<T> {
 	data: T[];
 	rowCount: number;
@@ -43,8 +52,17 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		return data.map((row) => row.table_name);
 	}
 
-	public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		throw new Error('Method not implemented.');
+	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
+		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(`DESCRIBE ${collectionName}`, true);
+		return data.map((record) => {
+			return {
+				name: record.Field,
+				type: record.Type,
+				isNullable: record.Null === 'YES',
+				defaultValue: record.Default,
+				isPrimaryKey: record.Key === 'PRI',
+			};
+		});
 	}
 
 	public getViews(): Promise<string[]> {
