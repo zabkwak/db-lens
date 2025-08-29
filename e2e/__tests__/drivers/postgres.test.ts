@@ -265,6 +265,12 @@ describe('PostgreSQL Driver', () => {
 		});
 
 		describe('.getIndexes', () => {
+			afterEach(async () => {
+				try {
+					await postgresQuery('DROP INDEX username_email');
+				} catch (e) {}
+			});
+
 			it('should return list of indexes for users table', async () => {
 				const collections = await postgres.getIndexes('users');
 				expect(collections).to.be.an('array');
@@ -286,6 +292,38 @@ describe('PostgreSQL Driver', () => {
 						kind: 'UNIQUE',
 						type: 'btree',
 						columns: ['email'],
+					},
+				]);
+			});
+
+			it('should return list of indexes with combined index added', async () => {
+				await postgresQuery('CREATE INDEX username_email ON users (username, email)');
+				const indexes = await postgres.getIndexes('users');
+				expect(indexes).to.be.an('array');
+				expect(indexes).to.deep.equal([
+					{
+						name: 'users_pkey',
+						kind: 'PRIMARY KEY',
+						type: 'btree',
+						columns: ['id'],
+					},
+					{
+						name: 'users_username_key',
+						kind: 'UNIQUE',
+						type: 'btree',
+						columns: ['username'],
+					},
+					{
+						name: 'users_email_key',
+						kind: 'UNIQUE',
+						type: 'btree',
+						columns: ['email'],
+					},
+					{
+						name: 'username_email',
+						kind: 'INDEX',
+						type: 'btree',
+						columns: ['username', 'email'],
 					},
 				]);
 			});
