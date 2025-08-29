@@ -145,6 +145,43 @@ describe('MySQL Driver', () => {
 		});
 	});
 
+	describe('.reconnect', () => {
+		it('should throw an error if database is not connected', async () => {
+			const mysql = new MySqlDriver(
+				{
+					host: 'localhost',
+					port: 3306,
+					username: 'db-lens',
+					database: 'mysql',
+					disableSsl: true,
+				},
+				new ConfigPasswordProvider({
+					password: 'test',
+				}),
+			);
+			await expect(mysql.reconnect()).to.be.rejectedWith('Database not connected');
+		});
+
+		it('should reconnect the database', async () => {
+			const mysql = new MySqlDriver(
+				{
+					host: 'localhost',
+					port: 3306,
+					username: 'db-lens',
+					database: 'mysql',
+					disableSsl: true,
+				},
+				new ConfigPasswordProvider({
+					password: 'test',
+				}),
+			);
+			await mysql.connect();
+			expect(mysql.isConnected()).to.be.true;
+			await mysql.reconnect();
+			expect(mysql.isConnected()).to.be.true;
+		});
+	});
+
 	describe('.close', () => {
 		it('should close the database connection', async () => {
 			const postgres = new MySqlDriver(
