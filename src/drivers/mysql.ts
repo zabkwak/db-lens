@@ -38,6 +38,24 @@ interface ICollectionPropertyDescriptionRecord {
 	Null: 'YES' | 'NO';
 }
 
+interface ICollectionIndexRecord {
+	Cardinality: number;
+	Collation: string;
+	Column_name: string;
+	Comment: string;
+	Expression: string | null;
+	Index_comment: string;
+	Index_type: string;
+	Key_name: string;
+	Non_unique: number;
+	Null: string;
+	Packed: string | null;
+	Seq_in_index: number;
+	Sub_part: number | null;
+	Table: string;
+	Visible: 'YES' | 'NO';
+}
+
 interface ITransformResult<T> {
 	data: T[];
 	rowCount: number;
@@ -70,8 +88,36 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		return data.map((row) => row.table_name);
 	}
 
-	public getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		throw new Error('Method not implemented.');
+	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
+		const { data } = await this._query<ICollectionIndexRecord>(`SHOW INDEXES FROM ${collectionName}`, true);
+		return data.reduce((acc, record) => {
+			if (!acc.find((idx) => idx.name === record.Key_name)) {
+				let kind: IIndexDescription['kind'] = 'INDEX';
+				if (record.Key_name === 'PRIMARY') {
+					kind = 'PRIMARY KEY';
+				} else if (record.Non_unique === 0) {
+					kind = 'UNIQUE';
+				}
+				return [
+					...acc,
+					{
+						name: record.Key_name,
+						kind,
+						type: record.Index_type,
+						columns: [record.Column_name],
+					},
+				];
+			}
+			return acc.map((index) => {
+				if (index.name === record.Key_name) {
+					return {
+						...index,
+						columns: [...index.columns, record.Column_name],
+					};
+				}
+				return index;
+			});
+		}, [] as IIndexDescription[]);
 	}
 
 	public query<T>(query: string): Promise<IQueryResult<T>> {

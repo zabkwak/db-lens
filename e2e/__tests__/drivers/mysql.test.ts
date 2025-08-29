@@ -295,6 +295,71 @@ describe('MySQL Driver', () => {
 			});
 		});
 
+		describe('.getIndexes', () => {
+			afterEach(async () => {
+				try {
+					await mysqlQuery('DROP INDEX username_email ON users');
+				} catch (e) {}
+			});
+
+			it('should return list of indexes for users table', async () => {
+				const indexes = await mysql.getIndexes('users');
+				expect(indexes).to.be.an('array');
+				expect(indexes).to.deep.equal([
+					{
+						name: 'PRIMARY',
+						kind: 'PRIMARY KEY',
+						type: 'BTREE',
+						columns: ['id'],
+					},
+					{
+						name: 'username',
+						kind: 'UNIQUE',
+						type: 'BTREE',
+						columns: ['username'],
+					},
+					{
+						name: 'email',
+						kind: 'UNIQUE',
+						type: 'BTREE',
+						columns: ['email'],
+					},
+				]);
+			});
+
+			it('should return list of indexes with combined index added', async () => {
+				await mysqlQuery('CREATE INDEX username_email ON users (username, email)');
+				const indexes = await mysql.getIndexes('users');
+				expect(indexes).to.be.an('array');
+				expect(indexes).to.deep.equal([
+					{
+						name: 'PRIMARY',
+						kind: 'PRIMARY KEY',
+						type: 'BTREE',
+						columns: ['id'],
+					},
+					{
+						name: 'username',
+						kind: 'UNIQUE',
+						type: 'BTREE',
+						columns: ['username'],
+					},
+					{
+						name: 'email',
+						kind: 'UNIQUE',
+						type: 'BTREE',
+						columns: ['email'],
+					},
+					{
+						name: 'username_email',
+						kind: 'INDEX',
+						type: 'BTREE',
+						columns: ['username', 'email'],
+					},
+				]);
+			});
+		});
+
 		describe('.query', () => {
 			it('should throw a not connected error', async () => {
 				await mysql.close();
