@@ -1,6 +1,5 @@
 import assert from 'node:assert';
 import { Pool, PoolClient, types } from 'pg';
-import { EQueryCommand } from '../../shared/types';
 import Logger, { ILoggingInstance } from '../logger';
 import BaseDriver from './base';
 import {
@@ -10,6 +9,7 @@ import {
 	IQueryResultCollectionPropertyDescription,
 	ISqlDriver,
 } from './interfaces';
+import { getCommand } from './sql/utils';
 
 export interface IPostgresCredentials {
 	host: string;
@@ -232,7 +232,7 @@ WHERE t.relname = $1
 				data: rows as T[],
 				properties,
 				rowCount,
-				command: this._getCommand(command),
+				command: getCommand(command),
 				commit: async () => {
 					if (autocommit) {
 						return;
@@ -260,21 +260,6 @@ WHERE t.relname = $1
 				},
 			});
 			throw error;
-		}
-	}
-
-	private _getCommand(command: string): EQueryCommand {
-		switch (command) {
-			case 'UPDATE':
-				return EQueryCommand.UPDATE;
-			case 'INSERT':
-				return EQueryCommand.INSERT;
-			case 'DELETE':
-				return EQueryCommand.DELETE;
-			case 'SELECT':
-				return EQueryCommand.SELECT;
-			default:
-				throw new Error(`Unknown command: ${command}`);
 		}
 	}
 

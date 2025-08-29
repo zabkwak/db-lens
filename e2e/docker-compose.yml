@@ -25,7 +25,7 @@ services:
             - '3306:3306'
         environment:
             - MYSQL_ROOT_PASSWORD=test
-            - MYSQL_DATABASE=mysql
+            - MYSQL_DATABASE=db_lens
             - MYSQL_USER=db-lens
             - MYSQL_PASSWORD=test
         healthcheck:

@@ -24,6 +24,7 @@ export default class ConnectionManager {
 			} else {
 				Logger.error('connection', `Failed to load connections: ${error.message}`);
 				vscode.window.showErrorMessage(`Failed to load connections: ${error.message}`);
+				throw error;
 			}
 		}
 	}

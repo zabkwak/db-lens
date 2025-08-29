@@ -1,8 +1,24 @@
-import mysql, { Pool } from 'mysql2/promise';
+import mysql, {
+	FieldPacket,
+	OkPacket,
+	Pool,
+	PoolConnection,
+	QueryResult,
+	ResultSetHeader,
+	RowDataPacket,
+} from 'mysql2/promise';
 import assert from 'node:assert';
+import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import BaseDriver from './base';
-import { ICollectionPropertyDescription, IIndexDescription, IQueryResult, ISqlDriver } from './interfaces';
+import {
+	ICollectionPropertyDescription,
+	IIndexDescription,
+	IQueryResult,
+	IQueryResultCollectionPropertyDescription,
+	ISqlDriver,
+} from './interfaces';
+import { getCommandFromQuery } from './sql/utils';
 
 export interface IMysqlCredentials {
 	host: string;
@@ -13,11 +29,18 @@ export interface IMysqlCredentials {
 	disableSsl?: boolean;
 }
 
+interface ITransformResult<T> {
+	data: T[];
+	rowCount: number;
+	command: EQueryCommand;
+}
+
 export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> implements ISqlDriver {
 	private _pool: Pool | null = null;
 
-	public getCollections(): Promise<string[]> {
-		throw new Error('Method not implemented.');
+	public async getCollections(): Promise<string[]> {
+		const { data } = await this._query<{ table_name: string }>('SHOW TABLES', true);
+		return data.map((row) => row.table_name);
 	}
 
 	public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
@@ -33,7 +56,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	}
 
 	public query<T>(query: string): Promise<IQueryResult<T>> {
-		throw new Error('Method not implemented.');
+		return this._query(query);
 	}
 
 	public getTag(): string {
@@ -58,6 +81,12 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 			ssl: this._credentials.disableSsl
 				? undefined
 				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
+			typeCast: (field, next) => {
+				if (field.type === 'DATE' || field.type === 'DATETIME' || field.type === 'TIMESTAMP') {
+					return field.string();
+				}
+				return next();
+			},
 		});
 		this._pool.on('connection', (client) => {
 			client.query('SET SESSION max_execution_time = 30000');
@@ -70,11 +99,174 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		this._pool = null;
 	}
 
+	private async _query<T>(query: string): Promise<IQueryResult<T>>;
+	private async _query<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
+	private async _query<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
+	private async _query<T>(query: string, autocommit: boolean = true, params?: any[]): Promise<IQueryResult<T>> {
+		if (!this._pool) {
+			throw new Error('Database not connected');
+		}
+		if (!this._password) {
+			throw new Error('Password not provided');
+		}
+		if (this._password.isExpired()) {
+			Logger.warn(this, 'Password expired, reconnecting...');
+			await this.reconnect();
+			return this._query<T>(query, autocommit as boolean, params as any[]);
+		}
+		const start = Date.now();
+		Logger.info('query', `Executing query: ${query}`, {
+			params,
+		});
+		let client: PoolConnection | null = null;
+		try {
+			client = await this._pool.getConnection();
+			await client.query('BEGIN');
+			const [result, fieldPacket] = await client.query(query, params);
+			const duration = Date.now() - start;
+			const { data, rowCount, command } = this._transformResult<T>(result, query);
+			Logger.info('query', `Executed query: ${query}`, {
+				params,
+				duration: `${duration}ms`,
+				rowCount,
+			});
+			const properties =
+				fieldPacket?.map((field): IQueryResultCollectionPropertyDescription => {
+					return {
+						name: field.name,
+						type: this._convertColumnType(field),
+					};
+				}) || [];
+			if (autocommit) {
+				await client?.query('COMMIT');
+				Logger.info('query', `Autocommit enabled, committed transaction for query: ${query}`);
+				client?.release();
+			}
+			return {
+				data,
+				properties,
+				rowCount,
+				command,
+				commit: async () => {
+					if (autocommit) {
+						return;
+					}
+					await client?.query('COMMIT');
+					Logger.info('query', `Committed transaction for query: ${query}`);
+					client?.release();
+				},
+				rollback: async () => {
+					if (autocommit) {
+						return;
+					}
+					await client?.query('ROLLBACK');
+					Logger.info('query', `Rolled back transaction for query: ${query}`);
+					client?.release();
+				},
+			};
+		} catch (error: any) {
+			await client?.query('ROLLBACK');
+			client?.release();
+			Logger.error('query', `Error executing query: ${query} - ${error}`, {
+				error: {
+					message: error.message,
+					...error,
+				},
+			});
+			throw error;
+		}
+	}
+
+	private _convertColumnType(field: FieldPacket): string {
+		let type = field.typeName;
+		if (!type) {
+			if (!field.type) {
+				return 'unknown';
+			}
+			// @ts-expect-error
+			type = mysql.Types[field.type.toString()] || 'unknown';
+		}
+		switch (type) {
+			case 'VAR_STRING':
+				return 'VARCHAR';
+			default:
+				return type as string;
+		}
+	}
+
+	private _transformResult<T>(result: QueryResult, query: string): ITransformResult<T> {
+		if (Array.isArray(result)) {
+			if (!result.length) {
+				return {
+					data: [],
+					rowCount: 0,
+					command: EQueryCommand.SELECT,
+				};
+			}
+			const keys = Object.keys(result[0]);
+			if (keys.some((key) => key === `Tables_in_${this._credentials.database}`)) {
+				const key = `Tables_in_${this._credentials.database}`;
+				const data = result.map((row): T => {
+					assert(!Array.isArray(row), 'Expected row not to be an array');
+					assert(
+						!this._isRowOkPacket(row) && !this._isRowResultSetHeader(row),
+						'Expected row not to be a result set header or OK packet',
+					);
+					return { table_name: row[key] } as T;
+				});
+				return {
+					data,
+					rowCount: data.length,
+					command: EQueryCommand.SELECT,
+				};
+			}
+			return {
+				data: result as T[],
+				rowCount: result.length,
+				// TODO ?
+				command: EQueryCommand.SELECT,
+			};
+		}
+		if (this._isRowResultSetHeader(result) || this._isRowOkPacket(result)) {
+			assert(!this._isRowOkPacket(result), 'Expected result not to be a deprecated OkPacket');
+			if (!result.info) {
+				if (result.insertId) {
+					return {
+						data: [],
+						rowCount: result.affectedRows,
+						command: EQueryCommand.INSERT,
+					};
+				}
+				return {
+					data: [],
+					rowCount: result.affectedRows,
+					command: getCommandFromQuery(query),
+				};
+			}
+			return {
+				data: [],
+				rowCount: result.affectedRows,
+				command: EQueryCommand.UPDATE,
+			};
+		}
+		throw new Error('Unexpected result format from MySQL query');
+	}
+
 	private _getHost(): string {
 		return (this._sshTunnel?.getLocalHost() ?? this._credentials.host) as string;
 	}
 
 	private _getPort(): number {
 		return (this._sshTunnel?.getLocalPort() ?? this._credentials.port) as number;
+	}
+
+	private _isRowResultSetHeader(
+		row: OkPacket | ResultSetHeader | RowDataPacket | RowDataPacket[],
+	): row is ResultSetHeader {
+		return 'affectedRows' in row && 'info' in row;
+	}
+
+	private _isRowOkPacket(row: OkPacket | ResultSetHeader | RowDataPacket | RowDataPacket[]): row is OkPacket {
+		return 'affectedRows' in row && !this._isRowResultSetHeader(row);
 	}
 }

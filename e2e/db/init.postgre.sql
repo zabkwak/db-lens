@@ -19,3 +19,10 @@ VALUES ('user-1', 'krha', 'krha@example.com'),
 		'draculas-cousin',
 		'draculas-cousin@example.com'
 	);
+
+CREATE TABLE commands (
+	id VARCHAR(10) PRIMARY KEY,
+	user_id VARCHAR(10) NOT NULL,
+	command TEXT NOT NULL,
+	created_timestamp TIMESTAMP NOT NULL DEFAULT NOW()
+);
