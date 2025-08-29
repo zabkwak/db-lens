@@ -246,7 +246,18 @@ describe('PostgreSQL Driver', () => {
 		});
 
 		describe('.getViews', () => {
+			afterEach(async () => {
+				await postgresQuery('DROP VIEW IF EXISTS test_view');
+			});
+
 			it('should return list of views', async () => {
+				await postgresQuery('CREATE VIEW test_view AS SELECT * FROM users');
+				const collections = await postgres.getViews();
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal(['test_view']);
+			});
+
+			it('should return empty list of views', async () => {
 				const collections = await postgres.getViews();
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal([]);

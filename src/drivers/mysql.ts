@@ -65,8 +65,9 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		});
 	}
 
-	public getViews(): Promise<string[]> {
-		throw new Error('Method not implemented.');
+	public async getViews(): Promise<string[]> {
+		const { data } = await this._query<{ table_name: string }>(`SHOW FULL TABLES WHERE Table_type = 'VIEW'`, true);
+		return data.map((row) => row.table_name);
 	}
 
 	public getIndexes(collectionName: string): Promise<IIndexDescription[]> {
