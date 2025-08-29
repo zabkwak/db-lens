@@ -1,6 +1,6 @@
 import mysql, { Pool } from 'mysql2/promise';
+import assert from 'node:assert';
 import Logger from '../logger';
-import Password from '../password-providers/password';
 import BaseDriver from './base';
 import { ICollectionPropertyDescription, IIndexDescription, IQueryResult, ISqlDriver } from './interfaces';
 
@@ -15,12 +15,6 @@ export interface IMysqlCredentials {
 
 export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> implements ISqlDriver {
 	private _pool: Pool | null = null;
-
-	private _password: Password | null = null;
-
-	public reconnect(): Promise<void> {
-		throw new Error('Method not implemented.');
-	}
 
 	public getCollections(): Promise<string[]> {
 		throw new Error('Method not implemented.');
@@ -51,7 +45,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	}
 
 	protected async _connect(): Promise<void> {
-		this._password = await this._passwordProvider.getPassword();
+		assert(this._password, 'Password should be defined');
 		const host = this._getHost();
 		const port = this._getPort();
 		Logger.info(this, `Connecting to MySQL at ${host}:${port}`);
@@ -74,7 +68,6 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	protected async _close(): Promise<void> {
 		await this._pool?.end();
 		this._pool = null;
-		this._password = null;
 	}
 
 	private _getHost(): string {

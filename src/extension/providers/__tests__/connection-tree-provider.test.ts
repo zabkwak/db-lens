@@ -479,9 +479,6 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('ViewsTreeItem', () => {
 			class MockDriver extends BaseDriver<{ hasViews?: boolean }, {}> implements IViewsDriver {
-				public reconnect(): Promise<void> {
-					throw new Error('Method not implemented');
-				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
@@ -586,9 +583,6 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('CollectionTreeItem', () => {
 			class MockDriver extends BaseDriver<{}, {}> {
-				public reconnect(): Promise<void> {
-					throw new Error('Method not implemented');
-				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
@@ -650,9 +644,6 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('PropertiesTreeItem', () => {
 			class MockDriver extends BaseDriver<{ validCollection?: boolean }, {}> {
-				public reconnect(): Promise<void> {
-					throw new Error('Method not implemented');
-				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}

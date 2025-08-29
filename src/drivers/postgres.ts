@@ -1,7 +1,7 @@
+import assert from 'node:assert';
 import { Pool, PoolClient, types } from 'pg';
 import { EQueryCommand } from '../../shared/types';
 import Logger, { ILoggingInstance } from '../logger';
-import Password from '../password-providers/password';
 import BaseDriver from './base';
 import {
 	ICollectionPropertyDescription,
@@ -47,19 +47,6 @@ export default class PostgresDriver<U>
 	implements ISqlDriver, ILoggingInstance
 {
 	private _pool: Pool | null = null;
-
-	private _password: Password | null = null;
-
-	public async reconnect(): Promise<void> {
-		if (!this._pool) {
-			throw new Error('Database not connected');
-		}
-		await this._pool.end();
-		this._connected = false;
-		Logger.info(this, `Reconnecting to PostgreSQL at ${this._getHost()}:${this._getPort()}`);
-		await this._connect();
-		this._connected = true;
-	}
 
 	public async getCollections(): Promise<string[]> {
 		const { data } = await this._query<{ tablename: string }>(
@@ -171,7 +158,7 @@ WHERE t.relname = $1
 	}
 
 	protected async _connect(): Promise<void> {
-		this._password = await this._passwordProvider.getPassword();
+		assert(this._password, 'Password should be defined');
 		const host = this._getHost();
 		const port = this._getPort();
 		Logger.info(this, `Connecting to PostgreSQL at ${host}:${port}`);
@@ -196,7 +183,6 @@ WHERE t.relname = $1
 	protected async _close(): Promise<void> {
 		await this._pool?.end();
 		this._pool = null;
-		this._password = null;
 	}
 
 	private async _query<T>(query: string): Promise<IQueryResult<T>>;
