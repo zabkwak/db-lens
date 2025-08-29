@@ -64,8 +64,46 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			defaultValue: 'public',
 		},
 	],
-	mysql: [],
-	sqlite: [],
+	mysql: [
+		{
+			key: 'host',
+			label: 'Host',
+			type: 'text',
+			placeholder: 'Enter Host',
+			defaultValue: 'localhost',
+			required: true,
+		},
+		{
+			key: 'port',
+			label: 'Port',
+			type: 'number',
+			placeholder: 'Enter Port',
+			defaultValue: 3306,
+			required: true,
+		},
+		{
+			key: 'username',
+			label: 'Username',
+			type: 'text',
+			placeholder: 'Enter Username',
+			defaultValue: '',
+			required: true,
+		},
+		{
+			key: 'database',
+			label: 'Database Name',
+			type: 'text',
+			placeholder: 'Enter Database Name',
+			defaultValue: '',
+			required: true,
+		},
+		{
+			key: 'sslRejectUnauthorized',
+			label: 'SSL Reject Unauthorized',
+			type: 'checkbox',
+			defaultValue: true,
+		},
+	],
 };
 
 export const drivers = Object.keys(driverOptions) as (keyof typeof driverOptions)[];

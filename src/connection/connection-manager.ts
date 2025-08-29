@@ -14,9 +14,16 @@ export default class ConnectionManager {
 		try {
 			const data = await fs.readFile(configPath, 'utf-8');
 			const connectionsData: Record<string, IConnection<any, any>> = JSON.parse(data);
-			this._connections = await Promise.all(
-				Object.entries(connectionsData).map(([name, config]) => new Connection(name, config)),
-			);
+			this._connections = Object.entries(connectionsData)
+				.map(([name, config]) => {
+					try {
+						return new Connection(name, config);
+					} catch (error: any) {
+						Logger.error('connection', `Failed to create connection ${name}: ${error.message}`);
+						return null;
+					}
+				})
+				.filter(Boolean) as Connection<any, any>[];
 		} catch (error: any) {
 			if (error.code === 'ENOENT') {
 				Logger.info('connection', `No connections file found at ${configPath}.`);
