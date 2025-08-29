@@ -276,6 +276,25 @@ describe('MySQL Driver', () => {
 			});
 		});
 
+		describe('.getViews', () => {
+			afterEach(async () => {
+				await mysqlQuery('DROP VIEW IF EXISTS test_view');
+			});
+
+			it('should return list of views', async () => {
+				await mysqlQuery('CREATE VIEW test_view AS SELECT * FROM users');
+				const collections = await mysql.getViews();
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal(['test_view']);
+			});
+
+			it('should return empty list of views', async () => {
+				const collections = await mysql.getViews();
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal([]);
+			});
+		});
+
 		describe('.query', () => {
 			it('should throw a not connected error', async () => {
 				await mysql.close();
