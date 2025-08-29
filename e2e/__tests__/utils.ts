@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
-import mysql from 'mysql2/promise';
+import mysql, { QueryResult } from 'mysql2/promise';
+import { Client } from 'pg';
 
 export function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,6 +23,40 @@ function killPortProcess(): Promise<void> {
 	});
 }
 
+export async function mysqlQuery(query: string, params?: any[]): Promise<QueryResult> {
+	let connection: mysql.Connection | null = null;
+	try {
+		connection = await mysql.createConnection({
+			host: 'localhost',
+			user: 'db-lens',
+			password: 'test',
+			database: 'db_lens',
+		});
+		await connection.connect();
+		const [result] = await connection.query(query, params);
+		return result;
+	} finally {
+		await connection?.end();
+	}
+}
+
+export async function postgresQuery(query: string, params?: any[]): Promise<any[]> {
+	let connection: Client | null = null;
+	try {
+		connection = new Client({
+			host: 'localhost',
+			user: 'db-lens',
+			password: 'test',
+			database: 'postgres',
+		});
+		await connection.connect();
+		const result = await connection.query(query, params);
+		return result.rows;
+	} finally {
+		await connection?.end();
+	}
+}
+
 export async function waitForMysqlReady(): Promise<void> {
 	const timeout = 10000;
 	const start = Date.now();
@@ -41,7 +76,7 @@ async function isMySqlReady(): Promise<boolean> {
 			host: 'localhost',
 			user: 'db-lens',
 			password: 'test',
-			database: 'mysql',
+			database: 'db_lens',
 		});
 		await connection.connect();
 		return true;

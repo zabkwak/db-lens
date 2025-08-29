@@ -24,28 +24,20 @@ export enum EState {
 }
 
 export default class Connection<T extends keyof typeof drivers, U extends keyof typeof passwordProviders> {
-	// TODO remove this?
-	public static async create<T extends keyof typeof drivers, U extends keyof typeof passwordProviders>(
-		name: string,
-		connection: IConnection<T, U>,
-	): Promise<Connection<T, U>> {
-		return new Connection(name, connection);
-	}
+	private static _connections: Connection<any, any>[] = [];
 
 	public static async cleanup(): Promise<void> {
 		for (const c of Connection._connections) {
 			await c.close();
 		}
 	}
-	private static _connections: Connection<any, any>[] = [];
+
 	private _name: string;
 	private _connection: IConnection<T, U>;
 	private _sshTunnel: SSHTunnel | null = null;
 	private _driver: BaseDriver<unknown, unknown>;
 	private _state: EState = EState.DISCONNECTED;
-
 	private _collections: string[] | null = null;
-	private _describes: Record<string, any> = {};
 
 	constructor(name: string, connection: IConnection<T, U>) {
 		// TODO validate all credentials

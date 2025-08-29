@@ -17,7 +17,10 @@ import TreeItem from './tree-items/tree-item';
 import ViewsTreeItem from './tree-items/views.tree-item';
 
 export default class ConnectionTreeProvider implements vscode.TreeDataProvider<TreeItem> {
+	private _loadFailed: boolean = false;
+
 	private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined>();
+
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
 	public setItemContextValue(item: TreeItem, contextValue: string): void {
@@ -36,6 +39,9 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	}
 
 	public getChildren(element?: TreeItem): TreeItem[] {
+		if (this._loadFailed) {
+			return [TreeItem.warning('Failed to load connections')];
+		}
 		const connections = ConnectionManager.getConnections();
 		if (!connections) {
 			this._loadConnections();
@@ -165,8 +171,13 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 
 	private async _loadConnections() {
 		// TODO handle errors
-		await ConnectionManager.load();
-		this.refresh();
+		try {
+			await ConnectionManager.load();
+		} catch (error) {
+			this._loadFailed = true;
+		} finally {
+			this.refresh();
+		}
 	}
 
 	private async _loadData(item: DataTreeItem<unknown>): Promise<void> {

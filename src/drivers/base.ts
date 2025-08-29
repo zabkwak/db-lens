@@ -7,6 +7,7 @@ import { ICollectionPropertyDescription, IQueryResult } from './interfaces';
 export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 	protected _credentials: T;
 
+	// TODO handle non-password authentication
 	protected _passwordProvider: BasePasswordProvider<U>;
 
 	protected _sshTunnel: SSHTunnel | null = null;

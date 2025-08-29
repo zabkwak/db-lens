@@ -5,7 +5,7 @@ import SSHTunnel from '../../../src/connection/ssh-tunnel';
 import PostgresDriver from '../../../src/drivers/postgres';
 import ConfigPasswordProvider from '../../../src/password-providers/config-provider';
 import Password from '../../../src/password-providers/password';
-import { cleanup } from '../utils';
+import { cleanup, postgresQuery } from '../utils';
 
 interface IUser {
 	id: string;
@@ -16,6 +16,7 @@ interface IUser {
 
 describe('PostgreSQL Driver', () => {
 	afterEach(async () => {
+		await postgresQuery('TRUNCATE TABLE commands');
 		await cleanup();
 	});
 
@@ -213,7 +214,7 @@ describe('PostgreSQL Driver', () => {
 		});
 	});
 
-	describe('.getCollections', () => {
+	describe('Data methods', () => {
 		const postgres = new PostgresDriver(
 			{
 				host: 'localhost',
@@ -236,212 +237,207 @@ describe('PostgreSQL Driver', () => {
 			await postgres.close();
 		});
 
-		it('should return list of tables', async () => {
-			const collections = await postgres.getCollections();
-			expect(collections).to.be.an('array');
-			expect(collections).to.deep.equal(['users']);
-		});
-	});
-
-	describe('.getViews', () => {
-		const postgres = new PostgresDriver(
-			{
-				host: 'localhost',
-				port: 5432,
-				username: 'db-lens',
-				database: 'postgres',
-				schema: 'public',
-				disableSsl: true,
-			},
-			new ConfigPasswordProvider({
-				password: 'test',
-			}),
-		);
-
-		beforeEach(async () => {
-			await postgres.connect();
+		describe('.getCollections', () => {
+			it('should return list of collections', async () => {
+				const collections = await postgres.getCollections();
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal(['commands', 'users']);
+			});
 		});
 
-		afterEach(async () => {
-			await postgres.close();
+		describe('.getViews', () => {
+			it('should return list of views', async () => {
+				const collections = await postgres.getViews();
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal([]);
+			});
 		});
 
-		it('should return list of views', async () => {
-			const collections = await postgres.getViews();
-			expect(collections).to.be.an('array');
-			expect(collections).to.deep.equal([]);
-		});
-	});
-
-	describe('.getIndexes', () => {
-		const postgres = new PostgresDriver(
-			{
-				host: 'localhost',
-				port: 5432,
-				username: 'db-lens',
-				database: 'postgres',
-				schema: 'public',
-				disableSsl: true,
-			},
-			new ConfigPasswordProvider({
-				password: 'test',
-			}),
-		);
-
-		beforeEach(async () => {
-			await postgres.connect();
-		});
-
-		afterEach(async () => {
-			await postgres.close();
+		describe('.getIndexes', () => {
+			it('should return list of indexes for users table', async () => {
+				const collections = await postgres.getIndexes('users');
+				expect(collections).to.be.an('array');
+				expect(collections).to.deep.equal([
+					{
+						name: 'users_pkey',
+						kind: 'PRIMARY KEY',
+						type: 'btree',
+						columns: ['id'],
+					},
+					{
+						name: 'users_username_key',
+						kind: 'UNIQUE',
+						type: 'btree',
+						columns: ['username'],
+					},
+					{
+						name: 'users_email_key',
+						kind: 'UNIQUE',
+						type: 'btree',
+						columns: ['email'],
+					},
+				]);
+			});
 		});
 
-		it('should return list of indexes for users table', async () => {
-			const collections = await postgres.getIndexes('users');
-			expect(collections).to.be.an('array');
-			expect(collections).to.deep.equal([
-				{
-					name: 'users_pkey',
-					kind: 'PRIMARY KEY',
-					type: 'btree',
-					columns: ['id'],
-				},
-				{
-					name: 'users_username_key',
-					kind: 'UNIQUE',
-					type: 'btree',
-					columns: ['username'],
-				},
-				{
-					name: 'users_email_key',
-					kind: 'UNIQUE',
-					type: 'btree',
-					columns: ['email'],
-				},
-			]);
-		});
-	});
-
-	describe('.describeCollection', () => {
-		const postgres = new PostgresDriver(
-			{
-				host: 'localhost',
-				port: 5432,
-				username: 'db-lens',
-				database: 'postgres',
-				schema: 'public',
-				disableSsl: true,
-			},
-			new ConfigPasswordProvider({
-				password: 'test',
-			}),
-		);
-
-		beforeEach(async () => {
-			await postgres.connect();
+		describe('.describeCollection', () => {
+			it('should describe table', async () => {
+				const properties = await postgres.describeCollection('users');
+				expect(properties).to.be.an('array');
+				expect(properties).to.deep.equal([
+					{
+						name: 'id',
+						type: 'character varying',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: true,
+					},
+					{
+						name: 'username',
+						type: 'character varying',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: false,
+					},
+					{
+						name: 'email',
+						type: 'character varying',
+						isNullable: false,
+						defaultValue: null,
+						isPrimaryKey: false,
+					},
+					{
+						name: 'created_timestamp',
+						type: 'timestamp without time zone',
+						isNullable: false,
+						defaultValue: 'now()',
+						isPrimaryKey: false,
+					},
+				]);
+			});
 		});
 
-		afterEach(async () => {
-			await postgres.close();
-		});
+		describe('.query', () => {
+			it('should throw a not connected error', async () => {
+				await postgres.close();
+				await expect(postgres.query<IUser>('select * from users')).to.be.rejectedWith('Database not connected');
+			});
 
-		it('should describe table', async () => {
-			const properties = await postgres.describeCollection('users');
-			expect(properties).to.be.an('array');
-			expect(properties).to.deep.equal([
-				{ name: 'id', type: 'character varying', isNullable: false, defaultValue: null, isPrimaryKey: true },
-				{
-					name: 'username',
-					type: 'character varying',
-					isNullable: false,
-					defaultValue: null,
-					isPrimaryKey: false,
-				},
-				{
-					name: 'email',
-					type: 'character varying',
-					isNullable: false,
-					defaultValue: null,
-					isPrimaryKey: false,
-				},
-				{
-					name: 'created_timestamp',
-					type: 'timestamp without time zone',
-					isNullable: false,
-					defaultValue: 'now()',
-					isPrimaryKey: false,
-				},
-			]);
-		});
-	});
+			it('should return all users', async () => {
+				const result = await postgres.query<IUser>('select * from users');
+				await result.commit();
+				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result.rollback).to.be.a('function');
+				expect(result.commit).to.be.a('function');
+				expect(result.command).to.be.equal('select');
+				expect(result.rowCount).to.be.equal(5);
+				expect(result.properties).to.be.an('array');
+				expect(result.properties).to.have.length(4);
+				expect(result.properties).to.deep.equal([
+					{ name: 'id', type: 'VARCHAR' },
+					{ name: 'username', type: 'VARCHAR' },
+					{ name: 'email', type: 'VARCHAR' },
+					{ name: 'created_timestamp', type: 'TIMESTAMP' },
+				]);
+				expect(result.data).to.be.an('array');
+				expect(result.data).to.have.length(5);
+				const [user1, user2, user3, user4, user5] = result.data;
+				expect(user1.id).to.be.equal('user-1');
+				expect(user1.username).to.be.equal('krha');
+				expect(user1.email).to.be.equal('krha@example.com');
+				expect(user1.created_timestamp).to.be.a('string');
+				expect(user2.id).to.be.equal('user-2');
+				expect(user2.username).to.be.equal('sheep');
+				expect(user2.email).to.be.equal('sheep@example.com');
+				expect(user2.created_timestamp).to.be.a('string');
+				expect(user3.id).to.be.equal('user-3');
+				expect(user3.username).to.be.equal('painter');
+				expect(user3.email).to.be.equal('painter@example.com');
+				expect(user3.created_timestamp).to.be.a('string');
+				expect(user4.id).to.be.equal('user-4');
+				expect(user4.username).to.be.equal('sloth-with-weird-worldview');
+				expect(user4.email).to.be.equal('sloth-with-weird-worldview@example.com');
+				expect(user4.created_timestamp).to.be.a('string');
+				expect(user5.id).to.be.equal('user-5');
+				expect(user5.username).to.be.equal('draculas-cousin');
+				expect(user5.email).to.be.equal('draculas-cousin@example.com');
+				expect(user5.created_timestamp).to.be.a('string');
+			});
 
-	describe('.query', () => {
-		const postgres = new PostgresDriver(
-			{
-				host: 'localhost',
-				port: 5432,
-				username: 'db-lens',
-				database: 'postgres',
-				schema: 'public',
-				disableSsl: true,
-			},
-			new ConfigPasswordProvider({
-				password: 'test',
-			}),
-		);
+			it('should insert the command', async () => {
+				const result = await postgres.query(
+					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
+				);
+				await result.commit();
+				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result.rollback).to.be.a('function');
+				expect(result.commit).to.be.a('function');
+				expect(result.command).to.be.equal('insert');
+				expect(result.rowCount).to.be.equal(1);
+				expect(result.properties).to.be.an('array');
+				expect(result.properties).to.have.length(0);
+				expect(result.properties).to.deep.equal([]);
+				expect(result.data).to.be.an('array');
+				expect(result.data).to.have.length(0);
+				expect(result.data).to.deep.equal([]);
+				const rows = await postgresQuery('SELECT * FROM commands');
+				expect(rows).to.be.an('array');
+				expect(rows).to.have.length(1);
+				const [row] = rows;
+				expect(row.id).to.be.equal('test');
+				expect(row.user_id).to.be.equal('user-1');
+				expect(row.command).to.be.equal('insert-command');
+				expect(row.created_timestamp).to.be.a('string');
+			});
 
-		beforeEach(async () => {
-			await postgres.connect();
-		});
+			it('should update the command', async () => {
+				await postgresQuery(
+					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
+				);
+				const result = await postgres.query("UPDATE commands SET command = 'update-command' WHERE id = 'test'");
+				await result.commit();
+				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result.rollback).to.be.a('function');
+				expect(result.commit).to.be.a('function');
+				expect(result.command).to.be.equal('update');
+				expect(result.rowCount).to.be.equal(1);
+				expect(result.properties).to.be.an('array');
+				expect(result.properties).to.have.length(0);
+				expect(result.properties).to.deep.equal([]);
+				expect(result.data).to.be.an('array');
+				expect(result.data).to.have.length(0);
+				expect(result.data).to.deep.equal([]);
+				const rows = await postgresQuery('SELECT * FROM commands');
+				expect(rows).to.be.an('array');
+				expect(rows).to.have.length(1);
+				const [row] = rows;
+				expect(row.id).to.be.equal('test');
+				expect(row.user_id).to.be.equal('user-1');
+				expect(row.command).to.be.equal('update-command');
+				expect(row.created_timestamp).to.be.a('string');
+			});
 
-		afterEach(async () => {
-			await postgres.close();
-		});
-
-		it('should throw a not connected error', async () => {
-			await postgres.close();
-			await expect(postgres.query<IUser>('select * from users')).to.be.rejectedWith('Database not connected');
-		});
-
-		it('should return all users', async () => {
-			const result = await postgres.query<IUser>('select * from users');
-			await result.commit();
-			expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
-			expect(result.rollback).to.be.a('function');
-			expect(result.commit).to.be.a('function');
-			expect(result.command).to.be.equal('select');
-			expect(result.rowCount).to.be.equal(5);
-			expect(result.properties).to.be.an('array');
-			expect(result.properties).to.have.length(4);
-			expect(result.properties).to.deep.equal([
-				{ name: 'id', type: 'VARCHAR' },
-				{ name: 'username', type: 'VARCHAR' },
-				{ name: 'email', type: 'VARCHAR' },
-				{ name: 'created_timestamp', type: 'TIMESTAMP' },
-			]);
-			expect(result.data).to.be.an('array');
-			expect(result.data).to.have.length(5);
-			const [user1, user2, user3, user4, user5] = result.data;
-			expect(user1.id).to.be.equal('user-1');
-			expect(user1.username).to.be.equal('krha');
-			expect(user1.email).to.be.equal('krha@example.com');
-			expect(user1.created_timestamp).to.be.a('string');
-			expect(user2.id).to.be.equal('user-2');
-			expect(user2.username).to.be.equal('sheep');
-			expect(user2.email).to.be.equal('sheep@example.com');
-			expect(user2.created_timestamp).to.be.a('string');
-			expect(user3.id).to.be.equal('user-3');
-			expect(user3.username).to.be.equal('painter');
-			expect(user3.email).to.be.equal('painter@example.com');
-			expect(user3.created_timestamp).to.be.a('string');
-			expect(user4.id).to.be.equal('user-4');
-			expect(user4.username).to.be.equal('sloth-with-weird-worldview');
-			expect(user4.email).to.be.equal('sloth-with-weird-worldview@example.com');
-			expect(user4.created_timestamp).to.be.a('string');
-			expect(user5.id).to.be.equal('user-5');
-			expect(user5.username).to.be.equal('draculas-cousin');
-			expect(user5.email).to.be.equal('draculas-cousin@example.com');
-			expect(user5.created_timestamp).to.be.a('string');
+			it('should delete the command', async () => {
+				await postgresQuery(
+					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
+				);
+				const result = await postgres.query("DELETE FROM commands WHERE id = 'test'");
+				await result.commit();
+				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result.rollback).to.be.a('function');
+				expect(result.commit).to.be.a('function');
+				expect(result.command).to.be.equal('delete');
+				expect(result.rowCount).to.be.equal(1);
+				expect(result.properties).to.be.an('array');
+				expect(result.properties).to.have.length(0);
+				expect(result.properties).to.deep.equal([]);
+				expect(result.data).to.be.an('array');
+				expect(result.data).to.have.length(0);
+				expect(result.data).to.deep.equal([]);
+				const rows = await postgresQuery('SELECT * FROM commands');
+				expect(rows).to.be.an('array');
+				expect(rows).to.have.length(0);
+			});
 		});
 	});
 });
