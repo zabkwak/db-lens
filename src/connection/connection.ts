@@ -43,7 +43,13 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 		// TODO validate all credentials
 		this._name = name;
 		this._connection = connection;
+		if (!(connection.db.driver in drivers)) {
+			throw new Error(`Unsupported database driver: ${connection.db.driver}`);
+		}
 		const Driver = drivers[connection.db.driver];
+		if (!(connection.passwordProvider.type in passwordProviders)) {
+			throw new Error(`Unsupported password provider: ${connection.passwordProvider.type}`);
+		}
 		const PasswordProvider = passwordProviders[connection.passwordProvider.type];
 		if (connection.sshTunnelOptions) {
 			this._sshTunnel = new SSHTunnel({

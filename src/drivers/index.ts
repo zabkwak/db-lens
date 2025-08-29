@@ -1,6 +1,7 @@
 import SSHTunnel from '../connection/ssh-tunnel';
 import BasePasswordProvider from '../password-providers/base';
 import BaseDriver from './base';
+import MySqlDriver, { IMysqlCredentials } from './mysql';
 import PostgresDriver, { IPostgresCredentials } from './postgres';
 
 export const drivers: Record<
@@ -12,8 +13,10 @@ export const drivers: Record<
 	>
 > = {
 	postgres: PostgresDriver,
+	mysql: MySqlDriver,
 };
 
 export type TCredentials = {
 	postgres: IPostgresCredentials;
+	mysql: IMysqlCredentials;
 };
