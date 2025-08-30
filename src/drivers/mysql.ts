@@ -71,7 +71,10 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	}
 
 	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(`DESCRIBE ${collectionName}`, true);
+		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(
+			`DESCRIBE \`${collectionName}\``,
+			true,
+		);
 		return data.map((record) => {
 			return {
 				name: record.Field,
@@ -89,7 +92,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	}
 
 	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		const { data } = await this._query<ICollectionIndexRecord>(`SHOW INDEXES FROM ${collectionName}`, true);
+		const { data } = await this._query<ICollectionIndexRecord>(`SHOW INDEXES FROM \`${collectionName}\``, true);
 		return data.reduce((acc, record) => {
 			if (!acc.find((idx) => idx.name === record.Key_name)) {
 				let kind: IIndexDescription['kind'] = 'INDEX';
