@@ -487,6 +487,12 @@ describe('PostgreSQL Driver', () => {
 				expect(rows).to.be.an('array');
 				expect(rows).to.have.length(0);
 			});
+
+			it('should fail on execution timeout', async () => {
+				await expect(postgres.query('select pg_sleep(2)', 1)).to.be.rejectedWith(
+					'canceling statement due to statement timeout',
+				);
+			});
 		});
 	});
 });

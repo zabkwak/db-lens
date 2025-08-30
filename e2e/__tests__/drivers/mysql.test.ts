@@ -481,6 +481,16 @@ describe('MySQL Driver', () => {
 				expect(rows).to.be.an('array');
 				expect(rows).to.have.length(0);
 			});
+
+			it('should fail on execution timeout', async () => {
+				const values: string[] = new Array(10000).fill(null).map((v, index) => {
+					return `('test-${index}', 'user-1', 'insert-command-${index}')`;
+				});
+				await mysqlQuery(`INSERT INTO commands (id, user_id, command) VALUES ${values.join(',')}`);
+				await expect(mysql.query('select * from commands', 1)).to.be.rejectedWith(
+					'Query execution was interrupted, maximum statement execution time exceeded',
+				);
+			});
 		});
 	});
 });

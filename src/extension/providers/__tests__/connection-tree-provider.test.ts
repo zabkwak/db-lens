@@ -485,9 +485,6 @@ describe('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
-				public query<T>(query: string): Promise<IQueryResult<T>> {
-					throw new Error('Method not implemented.');
-				}
 				public async getViews(): Promise<string[]> {
 					if (this._credentials.hasViews) {
 						return ['View 1', 'View 2'];
@@ -504,6 +501,9 @@ describe('ConnectionTreeProvider', () => {
 					throw new Error('Method not implemented.');
 				}
 				protected _close(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
 			}
@@ -589,9 +589,6 @@ describe('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
-				public query<T>(query: string): Promise<IQueryResult<T>> {
-					throw new Error('Method not implemented.');
-				}
 				public getName(): string {
 					return 'Mock SQL';
 				}
@@ -602,6 +599,9 @@ describe('ConnectionTreeProvider', () => {
 					throw new Error('Method not implemented.');
 				}
 				protected _close(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
 			}
@@ -650,9 +650,6 @@ describe('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
-				public query<T>(query: string): Promise<IQueryResult<T>> {
-					throw new Error('Method not implemented.');
-				}
 				public getName(): string {
 					return 'Mock SQL';
 				}
@@ -663,6 +660,9 @@ describe('ConnectionTreeProvider', () => {
 					throw new Error('Method not implemented.');
 				}
 				protected _close(): Promise<void> {
+					throw new Error('Method not implemented.');
+				}
+				protected _query<T>(query: string): Promise<IQueryResult<T>> {
 					throw new Error('Method not implemented.');
 				}
 			}

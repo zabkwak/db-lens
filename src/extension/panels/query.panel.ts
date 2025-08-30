@@ -18,7 +18,10 @@ export default class QueryPanel extends BasePanel {
 		if (isCommand(message, 'query')) {
 			const { payload, requestId } = message;
 			try {
-				const result = await this._item.getConnection().getDriver().query(payload.query);
+				const result = await this._item
+					.getConnection()
+					.getDriver()
+					.query(payload.query, payload.timeout as number);
 				if (result.command === EQueryCommand.SELECT) {
 					await result.commit();
 					this._sendQueryResult(result, requestId);
