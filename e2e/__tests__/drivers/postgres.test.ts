@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import path from 'path';
 import { Pool } from 'pg';
 import SSHTunnel from '../../../src/connection/ssh-tunnel';
+import StatementTimeoutError from '../../../src/drivers/errors/statement-timeout.error';
 import PostgresDriver from '../../../src/drivers/postgres';
 import ConfigPasswordProvider from '../../../src/password-providers/config-provider';
 import Password from '../../../src/password-providers/password';
@@ -489,9 +490,12 @@ describe('PostgreSQL Driver', () => {
 			});
 
 			it('should fail on execution timeout', async () => {
-				await expect(postgres.query('select pg_sleep(2)', 1)).to.be.rejectedWith(
-					'canceling statement due to statement timeout',
-				);
+				await expect(postgres.query('select pg_sleep(2)', 1))
+					.to.eventually.be.rejectedWith(
+						StatementTimeoutError,
+						'canceling statement due to statement timeout',
+					)
+					.and.to.have.property('code', 'ERR_STATEMENT_TIMEOUT');
 			});
 		});
 	});

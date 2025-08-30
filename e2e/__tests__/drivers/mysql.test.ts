@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import path from 'path';
 import SSHTunnel from '../../../src/connection/ssh-tunnel';
+import StatementTimeoutError from '../../../src/drivers/errors/statement-timeout.error';
 import MySqlDriver from '../../../src/drivers/mysql';
 import ConfigPasswordProvider from '../../../src/password-providers/config-provider';
 import Password from '../../../src/password-providers/password';
@@ -487,9 +488,12 @@ describe('MySQL Driver', () => {
 					return `('test-${index}', 'user-1', 'insert-command-${index}')`;
 				});
 				await mysqlQuery(`INSERT INTO commands (id, user_id, command) VALUES ${values.join(',')}`);
-				await expect(mysql.query('select * from commands', 1)).to.be.rejectedWith(
-					'Query execution was interrupted, maximum statement execution time exceeded',
-				);
+				await expect(mysql.query('select * from commands', 1))
+					.to.eventually.be.rejectedWith(
+						StatementTimeoutError,
+						'Query execution was interrupted, maximum statement execution time exceeded',
+					)
+					.and.to.have.property('code', 'ERR_STATEMENT_TIMEOUT');
 			});
 		});
 	});
