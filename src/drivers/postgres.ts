@@ -2,6 +2,7 @@ import assert from 'node:assert';
 import { Pool, PoolClient, types } from 'pg';
 import Logger, { ILoggingInstance } from '../logger';
 import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
+import StatementTimeoutError from './errors/statement-timeout.error';
 import {
 	ICollectionPropertyDescription,
 	IIndexDescription,
@@ -206,6 +207,7 @@ WHERE t.relname = $1
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
 			params,
+			timeout,
 		});
 		let client: PoolClient | null = null;
 		try {
@@ -257,6 +259,9 @@ WHERE t.relname = $1
 		} catch (error: any) {
 			await client?.query('ROLLBACK');
 			client?.release();
+			if (error.message === 'canceling statement due to statement timeout') {
+				error = new StatementTimeoutError(error.message);
+			}
 			Logger.error('query', `Error executing query: ${query} - ${error}`, {
 				error: {
 					message: error.message,

@@ -11,6 +11,7 @@ import assert from 'node:assert';
 import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
+import StatementTimeoutError from './errors/statement-timeout.error';
 import {
 	ICollectionPropertyDescription,
 	IIndexDescription,
@@ -194,6 +195,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
 			params,
+			timeout,
 		});
 		let client: PoolConnection | null = null;
 		try {
@@ -245,6 +247,9 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		} catch (error: any) {
 			await client?.query('ROLLBACK');
 			client?.release();
+			if (error.message === 'Query execution was interrupted, maximum statement execution time exceeded') {
+				error = new StatementTimeoutError(error.message);
+			}
 			Logger.error('query', `Error executing query: ${query} - ${error}`, {
 				error: {
 					message: error.message,

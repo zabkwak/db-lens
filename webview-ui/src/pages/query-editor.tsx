@@ -17,8 +17,12 @@ const QueryEditor: React.FC = () => {
 		setIsLoading(true);
 		setResult(null);
 		try {
-			// let the request timeout be long enough to let the query to fail
-			const result = await Request.request<'query', 'query.result'>('query', { query, timeout }, timeout * 2);
+			const result = await Request.request<'query', 'query.result'>(
+				'query',
+				{ query, timeout },
+				// let the request timeout be long enough to let the query to fail
+				Math.max(30000, 30000 + timeout),
+			);
 			setResult(result.data);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
