@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { Pool, PoolClient, types } from 'pg';
 import Logger, { ILoggingInstance } from '../logger';
-import BaseDriver from './base';
+import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
 import {
 	ICollectionPropertyDescription,
 	IIndexDescription,
@@ -49,7 +49,7 @@ export default class PostgresDriver<U>
 	private _pool: Pool | null = null;
 
 	public async getCollections(): Promise<string[]> {
-		const { data } = await this._query<{ tablename: string }>(
+		const { data } = await this._executeQuery<{ tablename: string }>(
 			`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = current_schema() order by tablename asc`,
 			true,
 		);
@@ -57,7 +57,7 @@ export default class PostgresDriver<U>
 	}
 
 	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(
+		const { data } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
 			`SELECT
     c.column_name AS name,
     c.data_type AS type,
@@ -100,7 +100,7 @@ WHERE
 	}
 
 	public async getViews(): Promise<string[]> {
-		const { data } = await this._query<{ viewname: string }>(
+		const { data } = await this._executeQuery<{ viewname: string }>(
 			`SELECT viewname FROM pg_catalog.pg_views WHERE schemaname = current_schema() order by viewname asc`,
 			true,
 		);
@@ -108,7 +108,7 @@ WHERE
 	}
 
 	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		const { data } = await this._query<ICollectionIndexRecord>(
+		const { data } = await this._executeQuery<ICollectionIndexRecord>(
 			`SELECT
     i.relname AS name,
     CASE
@@ -145,10 +145,6 @@ WHERE t.relname = $1
 		});
 	}
 
-	public query<T>(query: string): Promise<IQueryResult<T>> {
-		return this._query<T>(query, false);
-	}
-
 	public getTag(): string {
 		return 'postgres';
 	}
@@ -171,7 +167,7 @@ WHERE t.relname = $1
 			ssl: this._credentials.disableSsl
 				? false
 				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
-			statement_timeout: 30000,
+			statement_timeout: DEFAULT_EXECUTION_TIMEOUT,
 		});
 		const schema = this._credentials.schema || 'public';
 		this._pool.on('connect', (client) => {
@@ -185,20 +181,27 @@ WHERE t.relname = $1
 		this._pool = null;
 	}
 
-	private async _query<T>(query: string): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean = true, params?: any[]): Promise<IQueryResult<T>> {
+	protected async _query<T>(query: string, timeout: number): Promise<IQueryResult<T>> {
+		return this._executeQuery<T>(query, false, [], timeout);
+	}
+
+	private async _executeQuery<T>(query: string): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(
+		query: string,
+		autocommit: boolean,
+		params: any[],
+		timeout: number,
+	): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(
+		query: string,
+		autocommit: boolean = true,
+		params?: any[],
+		timeout: number = DEFAULT_EXECUTION_TIMEOUT,
+	): Promise<IQueryResult<T>> {
 		if (!this._pool) {
 			throw new Error('Database not connected');
-		}
-		if (!this._password) {
-			throw new Error('Password not provided');
-		}
-		if (this._password.isExpired()) {
-			Logger.warn(this, 'Password expired, reconnecting...');
-			await this.reconnect();
-			return this._query<T>(query, autocommit as boolean, params as any[]);
 		}
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
@@ -207,6 +210,7 @@ WHERE t.relname = $1
 		let client: PoolClient | null = null;
 		try {
 			client = await this._pool.connect();
+			await client.query(`SET statement_timeout = ${timeout}`);
 			await client.query('BEGIN');
 			const { rows, fields, rowCount, command } = await client.query(query, params);
 			const duration = Date.now() - start;

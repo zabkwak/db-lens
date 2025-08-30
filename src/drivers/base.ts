@@ -4,6 +4,8 @@ import BasePasswordProvider from '../password-providers/base';
 import Password from '../password-providers/password';
 import { ICollectionPropertyDescription, IQueryResult } from './interfaces';
 
+export const DEFAULT_EXECUTION_TIMEOUT = 30000;
+
 export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 	protected _credentials: T;
 
@@ -70,7 +72,21 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 
 	public abstract describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]>;
 
-	public abstract query<T>(query: string): Promise<IQueryResult<T>>;
+	public query<T>(query: string): Promise<IQueryResult<T>>;
+	public query<T>(query: string, timeout: number): Promise<IQueryResult<T>>;
+	public async query<T>(query: string, timeout?: number): Promise<IQueryResult<T>> {
+		if (!this.isConnected()) {
+			throw new Error('Database not connected');
+		}
+		if (!this._password) {
+			throw new Error('Password not provided');
+		}
+		if (this._password.isExpired()) {
+			Logger.warn(this, 'Password expired, reconnecting...');
+			await this.reconnect();
+		}
+		return this._query(query, timeout || DEFAULT_EXECUTION_TIMEOUT);
+	}
 
 	public isConnected(): boolean {
 		return this._connected;
@@ -83,4 +99,6 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 	protected abstract _connect(): Promise<void>;
 
 	protected abstract _close(): Promise<void>;
+
+	protected abstract _query<T>(query: string, timeout: number): Promise<IQueryResult<T>>;
 }

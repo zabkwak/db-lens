@@ -1,6 +1,7 @@
 import { VSCodeButton, VSCodeDivider, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
 import { IMessagePayload } from '../../../shared/types';
+import FormControl from '../components/form-control';
 import Table from '../components/table';
 import Request from '../request';
 import { TState } from '../types';
@@ -11,10 +12,13 @@ const QueryEditor: React.FC = () => {
 	const [query, setQuery] = useState('');
 	const [result, setResult] = useState<TState<IMessagePayload['query.result']['data']>>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [timeout, setTimeout] = useState(30000);
 	async function handleRunQuery(): Promise<void> {
 		setIsLoading(true);
+		setResult(null);
 		try {
-			const result = await Request.request<'query', 'query.result'>('query', { query }, 30000);
+			// let the request timeout be long enough to let the query to fail
+			const result = await Request.request<'query', 'query.result'>('query', { query, timeout }, timeout * 2);
 			setResult(result.data);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (error: any) {
@@ -39,20 +43,25 @@ const QueryEditor: React.FC = () => {
 	return (
 		<div className="query-editor">
 			<section className="query-section">
-				<VSCodeTextArea
-					className="query-input"
-					value={query}
-					// @ts-expect-error some weird typings
-					onInput={handleQueryChange}
-					rows={10}
-					resize="none"
-					onKeyDown={handleKeyDown}
-				>
-					Query
-				</VSCodeTextArea>
-				<VSCodeButton className="query-button" onClick={handleRunQuery} disabled={isLoading}>
-					Run Query
-				</VSCodeButton>
+				<div className="input">
+					<VSCodeTextArea
+						className="query-input"
+						value={query}
+						// @ts-expect-error some weird typings
+						onInput={handleQueryChange}
+						rows={10}
+						resize="none"
+						onKeyDown={handleKeyDown}
+					>
+						Query
+					</VSCodeTextArea>
+					<FormControl label="Timeout (ms)" value={timeout} type="number" onChange={setTimeout} />
+				</div>
+				<div className="controls">
+					<VSCodeButton className="query-button" onClick={handleRunQuery} disabled={isLoading}>
+						Run Query
+					</VSCodeButton>
+				</div>
 			</section>
 			<VSCodeDivider />
 			<section className="result-section">

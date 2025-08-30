@@ -10,7 +10,7 @@ import mysql, {
 import assert from 'node:assert';
 import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
-import BaseDriver from './base';
+import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
 import {
 	ICollectionPropertyDescription,
 	IIndexDescription,
@@ -66,12 +66,12 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	private _pool: Pool | null = null;
 
 	public async getCollections(): Promise<string[]> {
-		const { data } = await this._query<{ table_name: string }>('SHOW TABLES', true);
+		const { data } = await this._executeQuery<{ table_name: string }>('SHOW TABLES', true);
 		return data.map((row) => row.table_name);
 	}
 
 	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const { data } = await this._query<ICollectionPropertyDescriptionRecord>(
+		const { data } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
 			`DESCRIBE \`${collectionName}\``,
 			true,
 		);
@@ -87,12 +87,18 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 	}
 
 	public async getViews(): Promise<string[]> {
-		const { data } = await this._query<{ table_name: string }>(`SHOW FULL TABLES WHERE Table_type = 'VIEW'`, true);
+		const { data } = await this._executeQuery<{ table_name: string }>(
+			`SHOW FULL TABLES WHERE Table_type = 'VIEW'`,
+			true,
+		);
 		return data.map((row) => row.table_name);
 	}
 
 	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		const { data } = await this._query<ICollectionIndexRecord>(`SHOW INDEXES FROM \`${collectionName}\``, true);
+		const { data } = await this._executeQuery<ICollectionIndexRecord>(
+			`SHOW INDEXES FROM \`${collectionName}\``,
+			true,
+		);
 		return data.reduce((acc, record) => {
 			if (!acc.find((idx) => idx.name === record.Key_name)) {
 				let kind: IIndexDescription['kind'] = 'INDEX';
@@ -121,10 +127,6 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 				return index;
 			});
 		}, [] as IIndexDescription[]);
-	}
-
-	public query<T>(query: string): Promise<IQueryResult<T>> {
-		return this._query(query);
 	}
 
 	public getTag(): string {
@@ -157,7 +159,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 			},
 		});
 		this._pool.on('connection', (client) => {
-			client.query('SET SESSION max_execution_time = 30000');
+			client.query(`SET SESSION max_execution_time = ${DEFAULT_EXECUTION_TIMEOUT}`);
 		});
 		await this._pool.query('SELECT NOW()');
 	}
@@ -167,20 +169,27 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		this._pool = null;
 	}
 
-	private async _query<T>(query: string): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
-	private async _query<T>(query: string, autocommit: boolean = true, params?: any[]): Promise<IQueryResult<T>> {
+	protected async _query<T>(query: string, timeout: number): Promise<IQueryResult<T>> {
+		return this._executeQuery<T>(query, false, [], timeout);
+	}
+
+	private async _executeQuery<T>(query: string): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(
+		query: string,
+		autocommit: boolean,
+		params: any[],
+		timeout: number,
+	): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(
+		query: string,
+		autocommit: boolean = true,
+		params?: any[],
+		timeout: number = DEFAULT_EXECUTION_TIMEOUT,
+	): Promise<IQueryResult<T>> {
 		if (!this._pool) {
 			throw new Error('Database not connected');
-		}
-		if (!this._password) {
-			throw new Error('Password not provided');
-		}
-		if (this._password.isExpired()) {
-			Logger.warn(this, 'Password expired, reconnecting...');
-			await this.reconnect();
-			return this._query<T>(query, autocommit as boolean, params as any[]);
 		}
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
@@ -189,6 +198,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		let client: PoolConnection | null = null;
 		try {
 			client = await this._pool.getConnection();
+			await client.query(`SET SESSION max_execution_time = ${timeout}`);
 			await client.query('BEGIN');
 			const [result, fieldPacket] = await client.query(query, params);
 			const duration = Date.now() - start;

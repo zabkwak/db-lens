@@ -22,6 +22,7 @@ export enum EQueryCommand {
 export interface IMessagePayload {
 	query: {
 		query: string;
+		timeout?: number;
 	};
 	'query.result': IResult<{
 		data: any[];
