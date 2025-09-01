@@ -57,8 +57,10 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 		await this._close();
 		this._connected = false;
 		Logger.info(this, `Reconnecting to ${this.getName()}`);
+		this._password = await this._passwordProvider.getPassword();
 		await this._connect();
 		this._connected = true;
+		Logger.info(this, `Reconnected to ${this.getName()}`);
 	}
 
 	public async close(): Promise<void> {

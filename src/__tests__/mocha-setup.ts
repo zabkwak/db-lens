@@ -13,6 +13,7 @@ mockRequire('vscode', {
 			clear: sinon.spy(),
 			dispose: sinon.spy(),
 		}),
+		showInputBox: sinon.stub(),
 	},
 	// commands: { ... },
 	workspace: {

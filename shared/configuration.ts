@@ -169,6 +169,7 @@ export const passwordProviderOptions: Record<string, IFormDefinition[]> = {
 			required: true,
 		},
 	],
+	prompt: [],
 };
 
 export const passwordProviders = Object.keys(passwordProviderOptions) as (keyof typeof passwordProviderOptions)[];

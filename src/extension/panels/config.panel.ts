@@ -142,7 +142,6 @@ export default class ConfigPanel extends BasePanel {
 			passwordProvider: {
 				// @ts-expect-error
 				type: payload.db.passwordProvider.name,
-				// @ts-expect-error
 				config: payload.db.passwordProvider.options,
 			},
 		});

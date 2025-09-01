@@ -33,6 +33,7 @@ This extension enables secure connections to AWS RDS databases by combining SSH 
 This extension contributes the following settings:
 
 -   `db-lens.baseDir`: The base directory for DB Lens.
+-   `db-lens.portRange`: The port range for random ports used by the SSH tunnel.
 
 ## Known Issues
 
