@@ -21,8 +21,8 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 
 	private _error: Error | null = null;
 
-	constructor(label: string, dataManager: BaseDataManager<T>) {
-		super(label);
+	constructor(label: string, parent: TreeItem | null, dataManager: BaseDataManager<T>) {
+		super(label, parent);
 		this._dataManager = dataManager;
 	}
 

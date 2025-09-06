@@ -16,8 +16,8 @@ export default class ConnectionTreeItem<
 	U extends keyof typeof passwordProviders,
 > extends TreeItem {
 	private _connection: Connection<T, U>;
-	constructor(connection: Connection<T, U>) {
-		super(connection.getName(), vscode.TreeItemCollapsibleState.Collapsed);
+	constructor(connection: Connection<T, U>, parent: TreeItem | null) {
+		super(connection.getName(), parent, vscode.TreeItemCollapsibleState.Collapsed);
 		this._connection = connection;
 		this.contextValue = EConnectionContextValue.DEFAULT;
 	}
