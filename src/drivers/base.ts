@@ -80,13 +80,6 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 		if (!this.isConnected()) {
 			throw new Error('Database not connected');
 		}
-		if (!this._password) {
-			throw new Error('Password not provided');
-		}
-		if (this._password.isExpired()) {
-			Logger.warn(this, 'Password expired, reconnecting...');
-			await this.reconnect();
-		}
 		return this._query(query, timeout || DEFAULT_EXECUTION_TIMEOUT);
 	}
 
@@ -97,6 +90,16 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 	public abstract getTag(): string;
 
 	public abstract getName(): string;
+
+	protected async _checkPassword(): Promise<void> {
+		if (!this._password) {
+			throw new Error('Password not provided');
+		}
+		if (this._password.isExpired()) {
+			Logger.warn(this, 'Password expired, reconnecting...');
+			await this.reconnect();
+		}
+	}
 
 	protected abstract _connect(): Promise<void>;
 
