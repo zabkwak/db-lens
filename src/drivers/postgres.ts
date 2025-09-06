@@ -204,6 +204,7 @@ WHERE t.relname = $1
 		if (!this._pool) {
 			throw new Error('Database not connected');
 		}
+		await this._checkPassword();
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
 			params,
