@@ -5,8 +5,8 @@ import TreeItem from './tree-item';
 export default class CollectionTreeItem extends TreeItem {
 	private _driver: BaseDriver<unknown, unknown>;
 
-	constructor(name: string, driver: BaseDriver<unknown, unknown>) {
-		super(name, vscode.TreeItemCollapsibleState.Collapsed);
+	constructor(name: string, parent: TreeItem | null, driver: BaseDriver<unknown, unknown>) {
+		super(name, parent, vscode.TreeItemCollapsibleState.Collapsed);
 		this._driver = driver;
 	}
 

@@ -52,6 +52,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading...');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return warning tree item when no connections found', () => {
@@ -64,6 +65,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No connections found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return connection tree items', () => {
@@ -90,12 +92,14 @@ describe('ConnectionTreeProvider', () => {
 				expect(child1.iconPath.id).to.equal('database');
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
+				expect(child1.getParent()).to.be.null;
 				expect(child2.label).to.equal('Connection 2');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
 				// @ts-expect-error
 				expect(child2.iconPath.id).to.equal('database');
 				// @ts-expect-error
 				expect(child2.iconPath.color).to.be.undefined;
+				expect(child2.getParent()).to.be.null;
 			});
 		});
 
@@ -145,7 +149,7 @@ describe('ConnectionTreeProvider', () => {
 				const connectStub = sinon.stub(mockConnection, 'connect');
 				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
 				expect(connectStub.notCalled).to.be.true;
 				expect(loadCollectionsStub.notCalled).to.be.true;
@@ -155,6 +159,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Connection failed: Connection 1');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return loading tree item when connection is connecting', () => {
@@ -187,7 +192,7 @@ describe('ConnectionTreeProvider', () => {
 				const connectStub = sinon.stub(mockConnection, 'connect');
 				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
 				expect(connectStub.calledOnce).to.be.true;
 				expect(loadCollectionsStub.notCalled).to.be.true;
@@ -197,6 +202,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Connecting...');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return data tree item for tables', () => {
@@ -229,7 +235,7 @@ describe('ConnectionTreeProvider', () => {
 				const connectStub = sinon.stub(mockConnection, 'connect');
 				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
 				expect(connectStub).to.have.property('calledOnce', false);
 				expect(loadCollectionsStub).to.have.property('notCalled', true);
@@ -244,6 +250,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child.iconPath.id).to.equal('folder');
 				// @ts-expect-error
 				expect(child.iconPath.color).to.be.undefined;
+				expect(child.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
 			});
 
 			it('should return data tree item for tables and views', () => {
@@ -280,7 +287,7 @@ describe('ConnectionTreeProvider', () => {
 				const connectStub = sinon.stub(mockConnection, 'connect');
 				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection));
+				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
 				expect(connectStub).to.have.property('calledOnce', false);
 				expect(loadCollectionsStub).to.have.property('notCalled', true);
@@ -295,6 +302,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(tables.iconPath.id).to.equal('folder');
 				// @ts-expect-error
 				expect(tables.iconPath.color).to.be.undefined;
+				expect(tables.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
 				expect(views).to.be.instanceOf(DataTreeItem);
 				expect(views).to.be.an.instanceOf(ViewsTreeItem);
 				expect(views.label).to.equal('Views');
@@ -303,6 +311,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(views.iconPath.id).to.equal('preview');
 				// @ts-expect-error
 				expect(views.iconPath.color).to.be.undefined;
+				expect(views.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
 			});
 		});
 
@@ -355,6 +364,7 @@ describe('ConnectionTreeProvider', () => {
 				const children = provider.getChildren(
 					new CollectionsTreeItem(
 						'Tables',
+						null,
 						mockConnection.getDriver(),
 						new CollectionsDataManager(mockConnection),
 					),
@@ -367,6 +377,7 @@ describe('ConnectionTreeProvider', () => {
 				const [child] = children;
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading collections...');
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return warning tree item when connection has no collections', async () => {
@@ -401,6 +412,7 @@ describe('ConnectionTreeProvider', () => {
 
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
+					null,
 					mockConnection.getDriver(),
 					new CollectionsDataManager(mockConnection),
 				);
@@ -415,6 +427,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No collections found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return collection tree item when connection has collections', async () => {
@@ -448,6 +461,7 @@ describe('ConnectionTreeProvider', () => {
 				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
+					null,
 					mockConnection.getDriver(),
 					new CollectionsDataManager(mockConnection),
 				);
@@ -467,6 +481,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child1.iconPath.id).to.equal('folder');
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
+				expect(child1.getParent()).to.be.an.instanceOf(CollectionsTreeItem);
 				expect(child2).to.be.instanceOf(CollectionTreeItem);
 				expect(child2.label).to.equal('Collection 2');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
@@ -474,6 +489,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child2.iconPath.id).to.equal('folder');
 				// @ts-expect-error
 				expect(child2.iconPath.color).to.be.undefined;
+				expect(child2.getParent()).to.be.an.instanceOf(CollectionsTreeItem);
 			});
 		});
 
@@ -531,17 +547,19 @@ describe('ConnectionTreeProvider', () => {
 			it('should return loading tree item when views are loading', () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
 
-				const children = provider.getChildren(new ViewsTreeItem('Tables', new ViewsDataManager(driver)));
+				const children = provider.getChildren(new ViewsTreeItem('Tables', null, new ViewsDataManager(driver)));
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('Loading views...');
+				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return warning tree item when connection has no views', async () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
-				const viewsTreeItem = new ViewsTreeItem('Tables', new ViewsDataManager(driver));
+				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver));
 
 				await expect(viewsTreeItem.load()).to.be.fulfilled;
 
@@ -552,11 +570,12 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.instanceOf(TreeItem);
 				expect(child.label).to.equal('No views found');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return collection tree item when connection has collections', async () => {
 				const driver = new MockDriver({ hasViews: true }, new MockPasswordProvider({}));
-				const viewsTreeItem = new ViewsTreeItem('Tables', new ViewsDataManager(driver));
+				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver));
 
 				await expect(viewsTreeItem.load()).to.be.fulfilled;
 
@@ -571,6 +590,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child1.iconPath.id).to.equal('preview');
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
+				expect(child1.getParent()).to.be.an.instanceOf(ViewsTreeItem);
 				expect(child2).to.be.instanceOf(TreeItem);
 				expect(child2.label).to.equal('View 2');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.None);
@@ -578,6 +598,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child2.iconPath.id).to.equal('preview');
 				// @ts-expect-error
 				expect(child2.iconPath.color).to.be.undefined;
+				expect(child2.getParent()).to.be.an.instanceOf(ViewsTreeItem);
 			});
 		});
 
@@ -628,7 +649,7 @@ describe('ConnectionTreeProvider', () => {
 
 			it('should return list of Collection children for SQL collection', () => {
 				const children = provider.getChildren(
-					new CollectionTreeItem('Collection 1', new MockDriver({}, new MockPasswordProvider({}))),
+					new CollectionTreeItem('Collection 1', null, new MockDriver({}, new MockPasswordProvider({}))),
 				);
 				expect(children).to.have.length(1);
 				const [propertiesItem] = children;
@@ -639,6 +660,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(propertiesItem.iconPath.id).to.equal('symbol-property');
 				// @ts-expect-error
 				expect(propertiesItem.iconPath.color).to.be.undefined;
+				expect(propertiesItem.getParent()).to.be.an.instanceOf(CollectionTreeItem);
 			});
 		});
 
@@ -704,14 +726,15 @@ describe('ConnectionTreeProvider', () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
 				const describeCollectionStub = sinon.stub(driver, 'describeCollection');
 				const children = provider.getChildren(
-					new PropertiesTreeItem('Columns', new PropertiesDataManager('Collection 1', driver)),
+					new PropertiesTreeItem('Columns', null, new PropertiesDataManager('Collection 1', driver)),
 				);
 				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
-				const [child1] = children;
-				expect(child1).to.be.instanceOf(TreeItem);
-				expect(child1.label).to.equal('Loading properties...');
-				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				const [child] = children;
+				expect(child).to.be.instanceOf(TreeItem);
+				expect(child.label).to.equal('Loading properties...');
+				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return warning tree item', async () => {
@@ -721,16 +744,18 @@ describe('ConnectionTreeProvider', () => {
 					.throws(new Error('Failed to describe collection'));
 				const propertiesTreeItem = new PropertiesTreeItem(
 					'Columns',
+					null,
 					new PropertiesDataManager('Collection 1', driver),
 				);
 				await expect(propertiesTreeItem.load()).to.be.rejectedWith('Failed to describe collection');
 				const children = provider.getChildren(propertiesTreeItem);
 				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
-				const [child1] = children;
-				expect(child1).to.be.instanceOf(TreeItem);
-				expect(child1.label).to.equal('Failed to load properties: Failed to describe collection');
-				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				const [child] = children;
+				expect(child).to.be.instanceOf(TreeItem);
+				expect(child.label).to.equal('Failed to load properties: Failed to describe collection');
+				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.None);
+				expect(child.getParent()).to.be.null;
 			});
 
 			it('should return list of properties', async () => {
@@ -753,6 +778,7 @@ describe('ConnectionTreeProvider', () => {
 				]);
 				const propertiesTreeItem = new PropertiesTreeItem(
 					'Columns',
+					null,
 					new PropertiesDataManager('Collection 1', driver),
 				);
 				await expect(propertiesTreeItem.load()).to.be.fulfilled;
@@ -767,6 +793,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child1.iconPath.id).to.equal('key');
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
+				expect(child1.getParent()).to.be.an.instanceOf(PropertiesTreeItem);
 				expect(child2).to.be.instanceOf(TreeItem);
 				expect(child2.label).to.equal('property-2 (number)');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.None);
@@ -774,6 +801,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child2.iconPath.id).to.equal('output');
 				// @ts-expect-error
 				expect(child2.iconPath.color).to.be.undefined;
+				expect(child2.getParent()).to.be.an.instanceOf(PropertiesTreeItem);
 			});
 		});
 	});

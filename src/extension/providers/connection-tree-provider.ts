@@ -51,7 +51,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			return [TreeItem.warning('No connections found')];
 		}
 		if (!element) {
-			return connections.map((connection) => new ConnectionTreeItem(connection));
+			return connections.map((connection) => new ConnectionTreeItem(connection, null));
 		}
 		if (element instanceof ConnectionTreeItem) {
 			return this.getConnectionChildren(element);
@@ -77,10 +77,10 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			const driver = connection.getDriver();
 			// TODO wording for no-sql
 			const children: TreeItem[] = [
-				new CollectionsTreeItem('Tables', driver, new CollectionsDataManager(connection)),
+				new CollectionsTreeItem('Tables', element, driver, new CollectionsDataManager(connection)),
 			];
 			if (isViewsDriver(driver)) {
-				children.push(new ViewsTreeItem('Views', new ViewsDataManager(driver)));
+				children.push(new ViewsTreeItem('Views', element, new ViewsDataManager(driver)));
 			}
 			return children;
 		}
@@ -91,7 +91,10 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	}
 
 	public getCollectionsChildren(element: CollectionsTreeItem): TreeItem[] {
-		return this.getDataTreeItemChildren(element, (item) => new CollectionTreeItem(item.label, element.getDriver()));
+		return this.getDataTreeItemChildren(
+			element,
+			(item) => new CollectionTreeItem(item.label, element, element.getDriver()),
+		);
 	}
 
 	public getDataTreeItemChildren<T>(element: DataTreeItem<T>): TreeItem[];
@@ -117,7 +120,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 				if (mapper) {
 					return mapper(item);
 				}
-				return new TreeItem(item.label, item.collapsibleState, item.icon);
+				return new TreeItem(item.label, element, item.collapsibleState, item.icon);
 			});
 		}
 		if (!element.isLoading()) {
@@ -130,10 +133,12 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		const driver = element.getDriver();
 		const children: TreeItem[] = [
 			// TODO different name for no-sql
-			new PropertiesTreeItem('Columns', new PropertiesDataManager(element.label as string, driver)),
+			new PropertiesTreeItem('Columns', element, new PropertiesDataManager(element.label as string, driver)),
 		];
 		if (isIndexesDriver(driver)) {
-			children.push(new IndexesTreeItem('Indexes', new IndexesDataManager(element.label as string, driver)));
+			children.push(
+				new IndexesTreeItem('Indexes', element, new IndexesDataManager(element.label as string, driver)),
+			);
 		}
 		return children;
 	}
