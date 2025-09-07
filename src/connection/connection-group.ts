@@ -25,7 +25,10 @@ export default class ConnectionGroup {
 				try {
 					return new Connection(connection);
 				} catch (error: any) {
-					Logger.error('connection', `Failed to create connection ${config.name}: ${error.message}`);
+					Logger.error(
+						'connection',
+						`Failed to create connection ${connection.name} in group ${this._name}: ${error.message}`,
+					);
 					return null;
 				}
 			})
