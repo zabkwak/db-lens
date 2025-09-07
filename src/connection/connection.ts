@@ -5,6 +5,7 @@ import { passwordProviders, TPasswordProviders } from '../password-providers';
 import SSHTunnel from './ssh-tunnel';
 
 export interface IConnection<T extends keyof typeof drivers, U extends keyof typeof passwordProviders> {
+	name: string;
 	sshTunnelOptions?: Partial<ISSHTunnelConfiguration>;
 	db: {
 		driver: T;
@@ -14,6 +15,11 @@ export interface IConnection<T extends keyof typeof drivers, U extends keyof typ
 		type: U;
 		config: TPasswordProviders[U];
 	};
+}
+
+export interface IConnectionGroup {
+	name: string;
+	connections: (IConnection<any, any> | IConnectionGroup)[];
 }
 
 export enum EState {
@@ -39,9 +45,9 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 	private _state: EState = EState.DISCONNECTED;
 	private _collections: string[] | null = null;
 
-	constructor(name: string, connection: IConnection<T, U>) {
+	constructor(connection: IConnection<T, U>) {
 		// TODO validate all credentials
-		this._name = name;
+		this._name = connection.name;
 		this._connection = connection;
 		if (!(connection.db.driver in drivers)) {
 			throw new Error(`Unsupported database driver: ${connection.db.driver}`);
@@ -128,6 +134,10 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 
 	public getDriver(): BaseDriver<unknown, unknown> {
 		return this._driver;
+	}
+
+	public toJSON(): IConnection<T, U> {
+		return this.getConnection();
 	}
 
 	// TODO check differences between getConnection and getConfiguration

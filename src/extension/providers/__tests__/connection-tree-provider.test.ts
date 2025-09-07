@@ -4,6 +4,7 @@ import chaiAsPromised from 'chai-as-promised';
 import sinon from 'sinon';
 import { TreeItemCollapsibleState } from 'vscode';
 import Connection from '../../../connection/connection';
+import ConnectionGroup from '../../../connection/connection-group';
 import ConnectionManager from '../../../connection/connection-manager';
 import BaseDriver from '../../../drivers/base';
 import { ICollectionPropertyDescription, IQueryResult, IViewsDriver } from '../../../drivers/interfaces';
@@ -15,6 +16,7 @@ import PropertiesDataManager from '../data-managers/properties.data-manager';
 import ViewsDataManager from '../data-managers/views.data-manager';
 import CollectionTreeItem from '../tree-items/collection.tree-item';
 import CollectionsTreeItem from '../tree-items/collections.tree-item';
+import ConnectionGroupTreeItem from '../tree-items/connection-group.tree-item';
 import ConnectionTreeItem from '../tree-items/connection.tree-item';
 import DataTreeItem from '../tree-items/data.tree-item';
 import PropertiesTreeItem from '../tree-items/properties.tree-item';
@@ -70,6 +72,90 @@ describe('ConnectionTreeProvider', () => {
 
 			it('should return connection tree items', () => {
 				getConnectionsStub.returns([
+					new Connection({
+						name: 'Connection 1',
+						db: {
+							driver: 'postgres',
+							credentials: {
+								host: 'localhost',
+								port: 5432,
+								username: 'user',
+								database: 'db',
+							},
+						},
+						passwordProvider: {
+							type: 'prompt',
+							config: {},
+						},
+					}),
+					new Connection({
+						name: 'Connection 2',
+						db: {
+							driver: 'postgres',
+							credentials: {
+								host: 'localhost',
+								port: 5432,
+								username: 'user',
+								database: 'db',
+							},
+						},
+						passwordProvider: {
+							type: 'prompt',
+							config: {},
+						},
+					}),
+					new ConnectionGroup({
+						name: 'Group 1',
+						connections: [
+							{
+								name: 'Connection 3',
+								db: {
+									driver: 'postgres',
+									credentials: {
+										host: 'localhost',
+										port: 5432,
+										username: 'user',
+										database: 'db',
+									},
+								},
+								passwordProvider: {
+									type: 'prompt',
+									config: {},
+								},
+							},
+						],
+					}),
+				]);
+				const children = provider.getChildren();
+				expect(children).to.have.lengthOf(3);
+				const [child1, child2, child3] = children;
+				expect(child1).to.be.instanceOf(ConnectionTreeItem);
+				expect(child1.label).to.equal('Connection 1');
+				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
+				expect(child1.iconPath).to.not.be.undefined;
+				expect(child1.iconPath).to.have.property('id', 'database');
+				expect(child1.iconPath).to.have.property('color', undefined);
+				expect(child1.getParent()).to.be.null;
+				expect(child2).to.be.instanceOf(ConnectionTreeItem);
+				expect(child2.label).to.equal('Connection 2');
+				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
+				expect(child2.iconPath).to.not.be.undefined;
+				expect(child2.iconPath).to.have.property('id', 'database');
+				expect(child2.iconPath).to.have.property('color', undefined);
+				expect(child2.getParent()).to.be.null;
+				expect(child3).to.be.instanceOf(ConnectionGroupTreeItem);
+				expect(child3.label).to.equal('Group 1');
+				expect(child3.collapsibleState).to.equal(TreeItemCollapsibleState.Expanded);
+				expect(child3.iconPath).to.not.be.undefined;
+				expect(child3.iconPath).to.have.property('id', 'layers');
+				expect(child3.iconPath).to.have.property('color', undefined);
+				expect(child3.getParent()).to.be.null;
+			});
+		});
+
+		describe('ConnectionGroupTreeItem', () => {
+			beforeEach(() => {
+				getConnectionsStub.returns([
 					{
 						getName() {
 							return 'Connection 1';
@@ -81,25 +167,44 @@ describe('ConnectionTreeProvider', () => {
 						},
 					},
 				]);
-				const children = provider.getChildren();
-				expect(children).to.have.lengthOf(2);
-				const [child1, child2] = children;
-				expect(child1).to.be.instanceOf(ConnectionTreeItem);
-				expect(child2).to.be.instanceOf(ConnectionTreeItem);
-				expect(child1.label).to.equal('Connection 1');
-				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
-				// @ts-expect-error
-				expect(child1.iconPath.id).to.equal('database');
-				// @ts-expect-error
-				expect(child1.iconPath.color).to.be.undefined;
-				expect(child1.getParent()).to.be.null;
-				expect(child2.label).to.equal('Connection 2');
-				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
-				// @ts-expect-error
-				expect(child2.iconPath.id).to.equal('database');
-				// @ts-expect-error
-				expect(child2.iconPath.color).to.be.undefined;
-				expect(child2.getParent()).to.be.null;
+			});
+
+			it('should return connection tree items', () => {
+				const children = provider.getChildren(
+					new ConnectionGroupTreeItem(
+						new ConnectionGroup({
+							name: 'Group 1',
+							connections: [
+								{
+									name: 'Connection 3',
+									db: {
+										driver: 'postgres',
+										credentials: {
+											host: 'localhost',
+											port: 5432,
+											username: 'user',
+											database: 'db',
+										},
+									},
+									passwordProvider: {
+										type: 'prompt',
+										config: {},
+									},
+								},
+							],
+						}),
+						null,
+					),
+				);
+				expect(children).to.have.lengthOf(1);
+				const [child] = children;
+				expect(child).to.be.instanceOf(ConnectionTreeItem);
+				expect(child.label).to.equal('Connection 3');
+				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
+				expect(child.iconPath).to.not.be.undefined;
+				expect(child.iconPath).to.have.property('id', 'database');
+				expect(child.iconPath).to.have.property('color', undefined);
+				expect(child.getParent()).to.be.an.instanceOf(ConnectionGroupTreeItem);
 			});
 		});
 

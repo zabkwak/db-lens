@@ -1,5 +1,6 @@
-{
-	"Test Connection": {
+[
+	{
+		"name": "Test Connection",
 		"db": {
 			"driver": "postgres",
 			"credentials": {
@@ -31,5 +32,44 @@
 			"localHost": "localhost",
 			"connectionTimeout": 10000
 		}
+	},
+	{
+		"name": "Group",
+		"connections": [
+			{
+				"name": "Nested connection",
+				"db": {
+					"driver": "postgres",
+					"credentials": {
+						"host": "some.host",
+						"port": 5432,
+						"username": "some.user",
+						"database": "postgres",
+						"schema": "public",
+						"sslRejectUnauthorized": false
+					}
+				},
+				"passwordProvider": {
+					"type": "aws-rds-token",
+					"config": {
+						"host": "some.host",
+						"port": 5432,
+						"username": "some.user",
+						"region": "us-east-1",
+						"profile": "some-profile"
+					}
+				},
+				"sshTunnelOptions": {
+					"host": "bastion",
+					"port": 22,
+					"username": "ec2-user",
+					"privateKey": "/path/to/private/key",
+					"passphrase": null,
+					"localPort": 5432,
+					"localHost": "localhost",
+					"connectionTimeout": 10000
+				}
+			}
+		]
 	}
-}
+]
