@@ -131,7 +131,8 @@ export default class ConfigPanel extends BasePanel {
 	}
 
 	private _constructConnection(payload: IConnectionConfiguration): Connection<any, any> {
-		return new Connection(payload.name, {
+		return new Connection({
+			name: payload.name,
 			sshTunnelOptions: payload.sshTunnelOptions,
 			db: {
 				// @ts-expect-error

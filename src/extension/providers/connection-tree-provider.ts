@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import Connection from '../../connection/connection';
+import ConnectionGroup from '../../connection/connection-group';
 import ConnectionManager from '../../connection/connection-manager';
 import { isIndexesDriver, isViewsDriver } from '../../drivers/utils';
 import Logger from '../../logger';
@@ -9,6 +11,7 @@ import PropertiesDataManager from './data-managers/properties.data-manager';
 import ViewsDataManager from './data-managers/views.data-manager';
 import CollectionTreeItem from './tree-items/collection.tree-item';
 import CollectionsTreeItem from './tree-items/collections.tree-item';
+import ConnectionGroupTreeItem from './tree-items/connection-group.tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import DataTreeItem, { IDataTreeItemDescriptor } from './tree-items/data.tree-item';
 import IndexesTreeItem from './tree-items/indexes.tree-item';
@@ -51,7 +54,10 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			return [TreeItem.warning('No connections found')];
 		}
 		if (!element) {
-			return connections.map((connection) => new ConnectionTreeItem(connection, null));
+			return this.getGroupChildren(connections, null);
+		}
+		if (element instanceof ConnectionGroupTreeItem) {
+			return this.getGroupChildren(element.getGroup().getChildren(), element);
 		}
 		if (element instanceof ConnectionTreeItem) {
 			return this.getConnectionChildren(element);
@@ -66,6 +72,15 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			return this.getDataTreeItemChildren(element);
 		}
 		return [];
+	}
+
+	public getGroupChildren(children: (Connection<any, any> | ConnectionGroup)[], parent: TreeItem | null): TreeItem[] {
+		return children.map((connection) => {
+			if (connection instanceof Connection) {
+				return new ConnectionTreeItem(connection, parent);
+			}
+			return new ConnectionGroupTreeItem(connection, parent);
+		});
 	}
 
 	public getConnectionChildren(element: ConnectionTreeItem<any, any>): TreeItem[] {
