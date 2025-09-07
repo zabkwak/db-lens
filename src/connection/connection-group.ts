@@ -70,10 +70,38 @@ export default class ConnectionGroup {
 		return this._children;
 	}
 
+	public findGroupByPath(...path: string[]): ConnectionGroup {
+		const group = this._findGroupByPath(path, this._children);
+		if (!group) {
+			throw new Error(`Group path ${path.join(' -> ')} not found`);
+		}
+		return group;
+	}
+
 	public toJSON(): IConnectionGroup {
 		return {
 			name: this._name,
 			connections: this._children.map((c) => c.toJSON()),
 		};
+	}
+
+	private _findGroupByPath(
+		groupsPath: string[],
+		list: (Connection<any, any> | ConnectionGroup)[],
+	): ConnectionGroup | null {
+		if (!list || !groupsPath.length) {
+			return null;
+		}
+		const [name, ...restPath] = groupsPath;
+		const group = list.find(
+			(item) => item instanceof ConnectionGroup && item.getName() === name,
+		) as ConnectionGroup;
+		if (!group) {
+			return null;
+		}
+		if (!restPath.length) {
+			return group;
+		}
+		return this._findGroupByPath(restPath, group.getChildren());
 	}
 }
