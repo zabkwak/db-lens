@@ -24,11 +24,11 @@ export default class ConfigPanel extends BasePanel {
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
 		if (isCommand(message, 'testConnection')) {
 			const { payload, requestId } = message;
-			const connection = await this._constructConnection(payload);
+			const connection = this._constructConnection(payload);
 			try {
 				Logger.info('extension', 'Testing connection');
 				await connection.connect();
-				await connection.loadCollections();
+				await connection.getDriver().getNamespaces();
 				Logger.info('extension', 'Connection successful');
 				vscode.window.showInformationMessage('Connection successful');
 				this.postMessage({

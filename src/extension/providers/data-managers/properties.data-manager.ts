@@ -3,17 +3,18 @@ import { ICollectionPropertyDescription } from '../../../drivers/interfaces';
 import BaseDataManager from './base.data-manager';
 
 export default class PropertiesDataManager extends BaseDataManager<ICollectionPropertyDescription> {
+	private _driver: BaseDriver<unknown, unknown>;
+	private _namespace: string;
 	private _collectionName: string;
 
-	private _driver: BaseDriver<unknown, unknown>;
-
-	constructor(collectionName: string, driver: BaseDriver<unknown, unknown>) {
+	constructor(driver: BaseDriver<unknown, unknown>, namespace: string, collectionName: string) {
 		super();
-		this._collectionName = collectionName;
 		this._driver = driver;
+		this._namespace = namespace;
+		this._collectionName = collectionName;
 	}
 
 	protected _loadData(): Promise<ICollectionPropertyDescription[]> {
-		return this._driver.describeCollection(this._collectionName);
+		return this._driver.describeCollection(this._namespace, this._collectionName);
 	}
 }

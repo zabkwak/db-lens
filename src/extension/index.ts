@@ -8,6 +8,7 @@ import ConfigPanel from './panels/config.panel';
 import QueryPanel from './panels/query.panel';
 import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';
 import ConnectionTreeItem from './providers/tree-items/connection.tree-item';
+import NamespaceTreeItem from './providers/tree-items/namespace.tree-item';
 import { confirmWarningDialog } from './utils';
 import ViewManager from './view-manager';
 
@@ -23,8 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('db-lens.connect', async (item: ConnectionTreeItem<any, any>) => {
 			await ViewManager.getConnectionTreeProvider().connect(item);
 		}),
-		vscode.commands.registerCommand('db-lens.query', (item: ConnectionTreeItem<any, any>) => {
-			new QueryPanel(item, context).show();
+		vscode.commands.registerCommand('db-lens.query', (item: ConnectionTreeItem<any, any> | NamespaceTreeItem) => {
+			new QueryPanel(
+				item.getConnection(),
+				context,
+				item instanceof NamespaceTreeItem ? item.getName() : null,
+			).show();
 		}),
 		vscode.commands.registerCommand('db-lens.configure', (item: ConnectionTreeItem<any, any>) => {
 			new ConfigPanel(context, item).show();

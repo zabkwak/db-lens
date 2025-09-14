@@ -15,6 +15,7 @@ import ConnectionGroupTreeItem from './tree-items/connection-group.tree-item';
 import ConnectionTreeItem, { EConnectionContextValue } from './tree-items/connection.tree-item';
 import DataTreeItem, { IDataTreeItemDescriptor } from './tree-items/data.tree-item';
 import IndexesTreeItem from './tree-items/indexes.tree-item';
+import NamespaceTreeItem from './tree-items/namespace.tree-item';
 import PropertiesTreeItem from './tree-items/properties.tree-item';
 import TreeItem from './tree-items/tree-item';
 import ViewsTreeItem from './tree-items/views.tree-item';
@@ -62,11 +63,14 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (element instanceof ConnectionTreeItem) {
 			return this.getConnectionChildren(element);
 		}
-		if (element instanceof CollectionTreeItem) {
-			return this.getCollectionChildren(element);
+		if (element instanceof NamespaceTreeItem) {
+			return this.getNamespaceChildren(element);
 		}
 		if (element instanceof CollectionsTreeItem) {
 			return this.getCollectionsChildren(element);
+		}
+		if (element instanceof CollectionTreeItem) {
+			return this.getCollectionChildren(element);
 		}
 		if (element instanceof DataTreeItem) {
 			return this.getDataTreeItemChildren(element);
@@ -89,15 +93,16 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			return [TreeItem.warning(`Connection failed: ${connection.getName()}`)];
 		}
 		if (connection.isConnected()) {
-			const driver = connection.getDriver();
-			// TODO wording for no-sql
-			const children: TreeItem[] = [
-				new CollectionsTreeItem('Tables', element, driver, new CollectionsDataManager(connection)),
-			];
-			if (isViewsDriver(driver)) {
-				children.push(new ViewsTreeItem('Views', element, new ViewsDataManager(driver)));
+			const namespaces = element.getNamespaces();
+			if (!namespaces) {
+				return [TreeItem.loading('Loading namespaces...')];
 			}
-			return children;
+			if (!namespaces.length) {
+				return [TreeItem.warning('No namespaces found')];
+			}
+			return namespaces.map((name) => {
+				return new NamespaceTreeItem(name, element, connection);
+			});
 		}
 		if (!connection.isConnected() && !connection.isConnecting()) {
 			this.connect(element);
@@ -105,10 +110,29 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		return [TreeItem.loading('Connecting...')];
 	}
 
+	public getNamespaceChildren(element: NamespaceTreeItem): TreeItem[] {
+		const connection = element.getConnection();
+		const driver = connection.getDriver();
+		// TODO wording for no-sql
+		const children: TreeItem[] = [
+			new CollectionsTreeItem(
+				'Tables',
+				element,
+				connection.getDriver(),
+				new CollectionsDataManager(connection, element.getName()),
+				element.getName(),
+			),
+		];
+		if (isViewsDriver(driver)) {
+			children.push(new ViewsTreeItem('Views', element, new ViewsDataManager(driver, element.getName())));
+		}
+		return children;
+	}
+
 	public getCollectionsChildren(element: CollectionsTreeItem): TreeItem[] {
 		return this.getDataTreeItemChildren(
 			element,
-			(item) => new CollectionTreeItem(item.label, element, element.getDriver()),
+			(item) => new CollectionTreeItem(item.label, element, element.getDriver(), element.getNamespace()),
 		);
 	}
 
@@ -148,11 +172,19 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		const driver = element.getDriver();
 		const children: TreeItem[] = [
 			// TODO different name for no-sql
-			new PropertiesTreeItem('Columns', element, new PropertiesDataManager(element.label as string, driver)),
+			new PropertiesTreeItem(
+				'Columns',
+				element,
+				new PropertiesDataManager(driver, element.getNamespace(), element.label as string),
+			),
 		];
 		if (isIndexesDriver(driver)) {
 			children.push(
-				new IndexesTreeItem('Indexes', element, new IndexesDataManager(element.label as string, driver)),
+				new IndexesTreeItem(
+					'Indexes',
+					element,
+					new IndexesDataManager(element.getNamespace(), element.label as string, driver),
+				),
 			);
 		}
 		return children;

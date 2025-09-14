@@ -232,9 +232,17 @@ describe('MySQL Driver', () => {
 			await mysql.close();
 		});
 
+		describe('.getNamespaces', () => {
+			it('should return list of namespaces', async () => {
+				const namespaces = await mysql.getNamespaces();
+				expect(namespaces).to.be.an('array');
+				expect(namespaces).to.deep.equal(['db_lens', 'information_schema', 'performance_schema']);
+			});
+		});
+
 		describe('.getCollections', () => {
 			it('should return list of collections', async () => {
-				const collections = await mysql.getCollections();
+				const collections = await mysql.getCollections('db_lens');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal(['commands', 'users']);
 			});
@@ -242,7 +250,7 @@ describe('MySQL Driver', () => {
 
 		describe('.describeCollection', () => {
 			it('should describe table', async () => {
-				const properties = await mysql.describeCollection('users');
+				const properties = await mysql.describeCollection('db_lens', 'users');
 				expect(properties).to.be.an('array');
 				expect(properties).to.deep.equal([
 					{
@@ -284,13 +292,13 @@ describe('MySQL Driver', () => {
 
 			it('should return list of views', async () => {
 				await mysqlQuery('CREATE VIEW test_view AS SELECT * FROM users');
-				const collections = await mysql.getViews();
+				const collections = await mysql.getViews('db_lens');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal(['test_view']);
 			});
 
 			it('should return empty list of views', async () => {
-				const collections = await mysql.getViews();
+				const collections = await mysql.getViews('db_lens');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal([]);
 			});
@@ -304,7 +312,7 @@ describe('MySQL Driver', () => {
 			});
 
 			it('should return list of indexes for users table', async () => {
-				const indexes = await mysql.getIndexes('users');
+				const indexes = await mysql.getIndexes('db_lens', 'users');
 				expect(indexes).to.be.an('array');
 				expect(indexes).to.deep.equal([
 					{
@@ -330,7 +338,7 @@ describe('MySQL Driver', () => {
 
 			it('should return list of indexes with combined index added', async () => {
 				await mysqlQuery('CREATE INDEX username_email ON users (username, email)');
-				const indexes = await mysql.getIndexes('users');
+				const indexes = await mysql.getIndexes('db_lens', 'users');
 				expect(indexes).to.be.an('array');
 				expect(indexes).to.deep.equal([
 					{
@@ -367,8 +375,14 @@ describe('MySQL Driver', () => {
 				await expect(mysql.query<IUser>('select * from users')).to.be.rejectedWith('Database not connected');
 			});
 
+			it('should throw an error for invalid relation in non-existing schema', async () => {
+				await expect(mysql.query<IUser>('select * from users', 5000, 'test')).to.be.rejectedWith(
+					"Access denied for user 'db-lens'@'%' to database 'test'",
+				);
+			});
+
 			it('should return all users', async () => {
-				const result = await mysql.query<IUser>('select * from users');
+				const result = await mysql.query<IUser>('select * from users', 5000, 'db_lens');
 				await result.commit();
 				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
 				expect(result.rollback).to.be.a('function');
@@ -411,6 +425,8 @@ describe('MySQL Driver', () => {
 			it('should insert the command', async () => {
 				const result = await mysql.query(
 					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
+					5000,
+					'db_lens',
 				);
 				await result.commit();
 				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
@@ -438,7 +454,11 @@ describe('MySQL Driver', () => {
 				await mysqlQuery(
 					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
 				);
-				const result = await mysql.query("UPDATE commands SET command = 'update-command' WHERE id = 'test'");
+				const result = await mysql.query(
+					"UPDATE commands SET command = 'update-command' WHERE id = 'test'",
+					5000,
+					'db_lens',
+				);
 				await result.commit();
 				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
 				expect(result.rollback).to.be.a('function');
@@ -465,7 +485,7 @@ describe('MySQL Driver', () => {
 				await mysqlQuery(
 					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
 				);
-				const result = await mysql.query("DELETE FROM commands WHERE id = 'test'");
+				const result = await mysql.query("DELETE FROM commands WHERE id = 'test'", 5000, 'db_lens');
 				await result.commit();
 				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
 				expect(result.rollback).to.be.a('function');
@@ -488,7 +508,7 @@ describe('MySQL Driver', () => {
 					return `('test-${index}', 'user-1', 'insert-command-${index}')`;
 				});
 				await mysqlQuery(`INSERT INTO commands (id, user_id, command) VALUES ${values.join(',')}`);
-				await expect(mysql.query('select * from commands', 1))
+				await expect(mysql.query('select * from commands', 1, 'db_lens'))
 					.to.eventually.be.rejectedWith(
 						StatementTimeoutError,
 						'Query execution was interrupted, maximum statement execution time exceeded',

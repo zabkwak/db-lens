@@ -24,11 +24,11 @@ export interface ICollectionPropertyDescription {
 }
 
 export interface IViewsDriver {
-	getViews(): Promise<string[]>;
+	getViews(namespace: string): Promise<string[]>;
 }
 
 export interface IIndexesDriver {
-	getIndexes(collectionName: string): Promise<IIndexDescription[]>;
+	getIndexes(namespace: string, collectionName: string): Promise<IIndexDescription[]>;
 }
 
 export interface ISqlDriver extends IViewsDriver, IIndexesDriver {}
