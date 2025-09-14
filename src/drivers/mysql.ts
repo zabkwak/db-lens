@@ -25,8 +25,6 @@ export interface IMysqlCredentials {
 	host: string;
 	port: number;
 	username: string;
-	/** @deprecated */
-	database: string;
 	sslRejectUnauthorized?: boolean;
 	disableSsl?: boolean;
 }
@@ -223,7 +221,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 			await client.query('BEGIN');
 			const [result, fieldPacket] = await client.query(query, params);
 			const duration = Date.now() - start;
-			const { data, rowCount, command } = this._transformResult<T>(result, query);
+			const { data, rowCount, command } = this._transformResult<T>(result, query, namespace || '');
 			Logger.info('query', `Executed query: ${query}`, {
 				database: namespace,
 				params,
@@ -286,7 +284,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		}
 	}
 
-	private _transformResult<T>(result: QueryResult, query: string): ITransformResult<T> {
+	private _transformResult<T>(result: QueryResult, query: string, namespace: string): ITransformResult<T> {
 		if (Array.isArray(result)) {
 			if (!result.length) {
 				return {
@@ -296,8 +294,8 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 				};
 			}
 			const keys = Object.keys(result[0]);
-			if (keys.some((key) => key === `Tables_in_${this._credentials.database}`)) {
-				const key = `Tables_in_${this._credentials.database}`;
+			if (keys.some((key) => key === `Tables_in_${namespace}`)) {
+				const key = `Tables_in_${namespace}`;
 				const data = result.map((row): T => {
 					assert(!Array.isArray(row), 'Expected row not to be an array');
 					assert(

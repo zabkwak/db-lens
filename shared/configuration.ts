@@ -56,13 +56,6 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			type: 'checkbox',
 			defaultValue: true,
 		},
-		{
-			key: 'schema',
-			label: 'Schema',
-			type: 'text',
-			placeholder: 'Enter Schema (optional)',
-			defaultValue: 'public',
-		},
 	],
 	mysql: [
 		{
@@ -86,14 +79,6 @@ export const driverOptions: Record<string, IFormDefinition[]> = {
 			label: 'Username',
 			type: 'text',
 			placeholder: 'Enter Username',
-			defaultValue: '',
-			required: true,
-		},
-		{
-			key: 'database',
-			label: 'Database Name',
-			type: 'text',
-			placeholder: 'Enter Database Name',
 			defaultValue: '',
 			required: true,
 		},
