@@ -18,8 +18,6 @@ export interface IPostgresCredentials {
 	username: string;
 	database: string;
 	sslRejectUnauthorized?: boolean;
-	/** @deprecated */
-	schema?: string;
 	disableSsl?: boolean;
 }
 

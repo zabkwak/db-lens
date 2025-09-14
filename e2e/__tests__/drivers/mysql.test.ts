@@ -31,7 +31,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3307,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -47,7 +46,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -66,7 +64,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -86,7 +83,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -130,7 +126,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -155,7 +150,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -171,7 +165,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -192,7 +185,6 @@ describe('MySQL Driver', () => {
 					host: 'localhost',
 					port: 3306,
 					username: 'db-lens',
-					database: 'db_lens',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -216,7 +208,6 @@ describe('MySQL Driver', () => {
 				host: 'localhost',
 				port: 3306,
 				username: 'db-lens',
-				database: 'db_lens',
 				disableSsl: true,
 			},
 			new ConfigPasswordProvider({

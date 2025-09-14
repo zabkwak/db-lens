@@ -29,7 +29,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5433,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -46,7 +45,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -63,7 +61,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -86,7 +83,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -130,7 +126,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -158,7 +153,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -175,7 +169,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -197,7 +190,6 @@ describe('PostgreSQL Driver', () => {
 					port: 5432,
 					username: 'db-lens',
 					database: 'postgres',
-					schema: 'public',
 					disableSsl: true,
 				},
 				new ConfigPasswordProvider({
@@ -222,7 +214,6 @@ describe('PostgreSQL Driver', () => {
 				port: 5432,
 				username: 'db-lens',
 				database: 'postgres',
-				schema: 'public',
 				disableSsl: true,
 			},
 			new ConfigPasswordProvider({
