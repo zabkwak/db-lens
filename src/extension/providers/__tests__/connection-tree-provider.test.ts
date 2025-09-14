@@ -19,6 +19,7 @@ import CollectionsTreeItem from '../tree-items/collections.tree-item';
 import ConnectionGroupTreeItem from '../tree-items/connection-group.tree-item';
 import ConnectionTreeItem from '../tree-items/connection.tree-item';
 import DataTreeItem from '../tree-items/data.tree-item';
+import NamespaceTreeItem from '../tree-items/namespace.tree-item';
 import PropertiesTreeItem from '../tree-items/properties.tree-item';
 import TreeItem from '../tree-items/tree-item';
 import ViewsTreeItem from '../tree-items/views.tree-item';
@@ -252,7 +253,7 @@ describe('ConnectionTreeProvider', () => {
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'getCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
@@ -295,7 +296,7 @@ describe('ConnectionTreeProvider', () => {
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const loadCollectionsStub = sinon.stub(mockConnection, 'getCollections');
 
 				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
 
@@ -310,7 +311,7 @@ describe('ConnectionTreeProvider', () => {
 				expect(child.getParent()).to.be.null;
 			});
 
-			it('should return data tree item for tables', () => {
+			it('should return list of namespace tree items', async () => {
 				const mockConnection = {
 					getName() {
 						return 'Connection 1';
@@ -321,7 +322,53 @@ describe('ConnectionTreeProvider', () => {
 					failed() {
 						return false;
 					},
-					hasCollections() {
+					isConnected() {
+						return true;
+					},
+					isConnecting() {
+						return false;
+					},
+					getDriver() {
+						return {
+							async getNamespaces() {
+								return ['public', 'test'];
+							},
+						};
+					},
+					async connect() {},
+				} as unknown as Connection<any, any>;
+				getConnectionsStub.returns([mockConnection]);
+
+				const connectionTreeItem = new ConnectionTreeItem(mockConnection, null);
+
+				await expect(connectionTreeItem.connect()).to.be.fulfilled;
+
+				const children = provider.getChildren(connectionTreeItem);
+				expect(children).to.have.lengthOf(2);
+				const [child1, child2] = children;
+				expect(child1).to.be.instanceOf(NamespaceTreeItem);
+				expect(child1.label).to.equal('public');
+				expect(child1.getParent()).to.be.instanceOf(ConnectionTreeItem);
+				expect(child1.iconPath).to.have.property('id', 'database');
+				expect(child1.iconPath).to.have.property('color', undefined);
+				expect(child2).to.be.instanceOf(NamespaceTreeItem);
+				expect(child2.label).to.equal('test');
+				expect(child2.getParent()).to.be.instanceOf(ConnectionTreeItem);
+				expect(child2.iconPath).to.have.property('id', 'database');
+				expect(child2.iconPath).to.have.property('color', undefined);
+			});
+		});
+
+		describe('NamespaceTreeItem', () => {
+			it('should return data tree item for tables', () => {
+				const mockConnection = {
+					getName() {
+						return 'Connection 1';
+					},
+					getCollections() {
+						return null;
+					},
+					failed() {
 						return false;
 					},
 					isConnected() {
@@ -334,16 +381,15 @@ describe('ConnectionTreeProvider', () => {
 						return {};
 					},
 					async connect() {},
-					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const getCollectionsStub = sinon.stub(mockConnection, 'getCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
+				const children = provider.getChildren(new NamespaceTreeItem('public', null, mockConnection));
 
 				expect(connectStub).to.have.property('calledOnce', false);
-				expect(loadCollectionsStub).to.have.property('notCalled', true);
+				expect(getCollectionsStub).to.have.property('notCalled', true);
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
@@ -351,11 +397,9 @@ describe('ConnectionTreeProvider', () => {
 				expect(child).to.be.an.instanceOf(CollectionsTreeItem);
 				expect(child.label).to.equal('Tables');
 				expect(child.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
-				// @ts-expect-error
-				expect(child.iconPath.id).to.equal('folder');
-				// @ts-expect-error
-				expect(child.iconPath.color).to.be.undefined;
-				expect(child.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
+				expect(child.iconPath).to.have.property('id', 'folder');
+				expect(child.iconPath).to.have.property('color', undefined);
+				expect(child.getParent()).to.be.an.instanceOf(NamespaceTreeItem);
 			});
 
 			it('should return data tree item for tables and views', () => {
@@ -367,9 +411,6 @@ describe('ConnectionTreeProvider', () => {
 						return null;
 					},
 					failed() {
-						return false;
-					},
-					hasCollections() {
 						return false;
 					},
 					isConnected() {
@@ -386,16 +427,15 @@ describe('ConnectionTreeProvider', () => {
 						};
 					},
 					async connect() {},
-					async loadCollections() {},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const getCollectionsStub = sinon.stub(mockConnection, 'getCollections');
 
-				const children = provider.getChildren(new ConnectionTreeItem(mockConnection, null));
+				const children = provider.getChildren(new NamespaceTreeItem('public', null, mockConnection));
 
 				expect(connectStub).to.have.property('calledOnce', false);
-				expect(loadCollectionsStub).to.have.property('notCalled', true);
+				expect(getCollectionsStub).to.have.property('notCalled', true);
 
 				expect(children).to.have.lengthOf(2);
 				const [tables, views] = children;
@@ -403,20 +443,16 @@ describe('ConnectionTreeProvider', () => {
 				expect(tables).to.be.an.instanceOf(CollectionsTreeItem);
 				expect(tables.label).to.equal('Tables');
 				expect(tables.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
-				// @ts-expect-error
-				expect(tables.iconPath.id).to.equal('folder');
-				// @ts-expect-error
-				expect(tables.iconPath.color).to.be.undefined;
-				expect(tables.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
+				expect(tables.iconPath).to.have.property('id', 'folder');
+				expect(tables.iconPath).to.have.property('color', undefined);
+				expect(tables.getParent()).to.be.an.instanceOf(NamespaceTreeItem);
 				expect(views).to.be.instanceOf(DataTreeItem);
 				expect(views).to.be.an.instanceOf(ViewsTreeItem);
 				expect(views.label).to.equal('Views');
 				expect(views.collapsibleState).to.equal(TreeItemCollapsibleState.Collapsed);
-				// @ts-expect-error
-				expect(views.iconPath.id).to.equal('preview');
-				// @ts-expect-error
-				expect(views.iconPath.color).to.be.undefined;
-				expect(views.getParent()).to.be.an.instanceOf(ConnectionTreeItem);
+				expect(views.iconPath).to.have.property('id', 'preview');
+				expect(views.iconPath).to.have.property('color', undefined);
+				expect(views.getParent()).to.be.an.instanceOf(NamespaceTreeItem);
 			});
 		});
 
@@ -441,13 +477,7 @@ describe('ConnectionTreeProvider', () => {
 					getName() {
 						return 'Connection 1';
 					},
-					getCollections() {
-						return null;
-					},
 					failed() {
-						return false;
-					},
-					hasCollections() {
 						return false;
 					},
 					isConnected() {
@@ -460,23 +490,26 @@ describe('ConnectionTreeProvider', () => {
 						return {};
 					},
 					async connect() {},
-					async loadCollections() {},
+					async getCollections() {
+						return null;
+					},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const getCollectionsStub = sinon.stub(mockConnection, 'getCollections');
 
 				const children = provider.getChildren(
 					new CollectionsTreeItem(
 						'Tables',
 						null,
 						mockConnection.getDriver(),
-						new CollectionsDataManager(mockConnection),
+						new CollectionsDataManager(mockConnection, 'namespace'),
+						'namespace',
 					),
 				);
 
 				expect(connectStub).to.have.property('notCalled', true);
-				expect(loadCollectionsStub).to.have.property('calledOnce', true);
+				expect(getCollectionsStub).to.have.property('calledOnce', true);
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
@@ -490,14 +523,8 @@ describe('ConnectionTreeProvider', () => {
 					getName() {
 						return 'Connection 1';
 					},
-					getCollections() {
-						return [];
-					},
 					failed() {
 						return false;
-					},
-					hasCollections() {
-						return true;
 					},
 					isConnected() {
 						return true;
@@ -509,23 +536,26 @@ describe('ConnectionTreeProvider', () => {
 						return {};
 					},
 					async connect() {},
-					async loadCollections() {},
+					async getCollections(namespace: string): Promise<string[]> {
+						return [];
+					},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const getCollectionsStub = sinon.stub(mockConnection, 'getCollections').resolves([]);
 
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
 					mockConnection.getDriver(),
-					new CollectionsDataManager(mockConnection),
+					new CollectionsDataManager(mockConnection, 'namespace'),
+					'namespace',
 				);
 				await expect(collectionsTreeItem.load()).to.be.fulfilled;
 
 				const children = provider.getChildren(collectionsTreeItem);
 				expect(connectStub).to.have.property('notCalled', true);
-				expect(loadCollectionsStub).to.have.property('calledOnce', true);
+				expect(getCollectionsStub).to.have.property('calledOnce', true);
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
@@ -540,9 +570,6 @@ describe('ConnectionTreeProvider', () => {
 					getName() {
 						return 'Connection 1';
 					},
-					getCollections() {
-						return ['Collection 1', 'Collection 2'];
-					},
 					failed() {
 						return false;
 					},
@@ -559,23 +586,28 @@ describe('ConnectionTreeProvider', () => {
 						return {};
 					},
 					async connect() {},
-					async loadCollections() {},
+					async getCollections() {
+						return ['Collection 1', 'Collection 2'];
+					},
 				} as unknown as Connection<any, any>;
 				getConnectionsStub.returns([mockConnection]);
 				const connectStub = sinon.stub(mockConnection, 'connect');
-				const loadCollectionsStub = sinon.stub(mockConnection, 'loadCollections');
+				const getCollectionsStub = sinon
+					.stub(mockConnection, 'getCollections')
+					.resolves(['Collection 1', 'Collection 2']);
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
 					mockConnection.getDriver(),
-					new CollectionsDataManager(mockConnection),
+					new CollectionsDataManager(mockConnection, 'namespace'),
+					'namespace',
 				);
 				await expect(collectionsTreeItem.load()).to.be.fulfilled;
 
 				const children = provider.getChildren(collectionsTreeItem);
 
 				expect(connectStub).to.have.property('notCalled', true);
-				expect(loadCollectionsStub).to.have.property('calledOnce', true);
+				expect(getCollectionsStub).to.have.property('calledOnce', true);
 
 				expect(children).to.have.lengthOf(2);
 				const [child1, child2] = children;
@@ -600,13 +632,19 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('ViewsTreeItem', () => {
 			class MockDriver extends BaseDriver<{ hasViews?: boolean }, {}> implements IViewsDriver {
-				public getCollections(): Promise<string[]> {
+				public getNamespaces(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
-				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
+				public getCollections(namespace: string): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
-				public async getViews(): Promise<string[]> {
+				public describeCollection(
+					namespace: string,
+					collectionName: string,
+				): Promise<ICollectionPropertyDescription[]> {
+					throw new Error('Method not implemented.');
+				}
+				public async getViews(namespace: string): Promise<string[]> {
 					if (this._credentials.hasViews) {
 						return ['View 1', 'View 2'];
 					}
@@ -652,7 +690,9 @@ describe('ConnectionTreeProvider', () => {
 			it('should return loading tree item when views are loading', () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
 
-				const children = provider.getChildren(new ViewsTreeItem('Tables', null, new ViewsDataManager(driver)));
+				const children = provider.getChildren(
+					new ViewsTreeItem('Tables', null, new ViewsDataManager(driver, 'namespace')),
+				);
 
 				expect(children).to.have.lengthOf(1);
 				const [child] = children;
@@ -664,7 +704,7 @@ describe('ConnectionTreeProvider', () => {
 
 			it('should return warning tree item when connection has no views', async () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
-				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver));
+				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver, 'namespace'));
 
 				await expect(viewsTreeItem.load()).to.be.fulfilled;
 
@@ -680,7 +720,7 @@ describe('ConnectionTreeProvider', () => {
 
 			it('should return collection tree item when connection has collections', async () => {
 				const driver = new MockDriver({ hasViews: true }, new MockPasswordProvider({}));
-				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver));
+				const viewsTreeItem = new ViewsTreeItem('Tables', null, new ViewsDataManager(driver, 'namespace'));
 
 				await expect(viewsTreeItem.load()).to.be.fulfilled;
 
@@ -709,6 +749,9 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('CollectionTreeItem', () => {
 			class MockDriver extends BaseDriver<{}, {}> {
+				public getNamespaces(): Promise<string[]> {
+					throw new Error('Method not implemented.');
+				}
 				public getCollections(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
@@ -754,7 +797,12 @@ describe('ConnectionTreeProvider', () => {
 
 			it('should return list of Collection children for SQL collection', () => {
 				const children = provider.getChildren(
-					new CollectionTreeItem('Collection 1', null, new MockDriver({}, new MockPasswordProvider({}))),
+					new CollectionTreeItem(
+						'Collection 1',
+						null,
+						new MockDriver({}, new MockPasswordProvider({})),
+						'namespace',
+					),
 				);
 				expect(children).to.have.length(1);
 				const [propertiesItem] = children;
@@ -771,10 +819,16 @@ describe('ConnectionTreeProvider', () => {
 
 		describe('PropertiesTreeItem', () => {
 			class MockDriver extends BaseDriver<{ validCollection?: boolean }, {}> {
-				public getCollections(): Promise<string[]> {
+				public getNamespaces(): Promise<string[]> {
 					throw new Error('Method not implemented.');
 				}
-				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
+				public getCollections(namespace: string): Promise<string[]> {
+					throw new Error('Method not implemented.');
+				}
+				public describeCollection(
+					namespace: string,
+					collectionName: string,
+				): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
 				public getName(): string {
@@ -831,9 +885,13 @@ describe('ConnectionTreeProvider', () => {
 				const driver = new MockDriver({}, new MockPasswordProvider({}));
 				const describeCollectionStub = sinon.stub(driver, 'describeCollection');
 				const children = provider.getChildren(
-					new PropertiesTreeItem('Columns', null, new PropertiesDataManager('Collection 1', driver)),
+					new PropertiesTreeItem(
+						'Columns',
+						null,
+						new PropertiesDataManager(driver, 'namespace', 'Collection 1'),
+					),
 				);
-				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
+				expect(describeCollectionStub.calledOnceWith('namespace', 'Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(TreeItem);
@@ -850,11 +908,11 @@ describe('ConnectionTreeProvider', () => {
 				const propertiesTreeItem = new PropertiesTreeItem(
 					'Columns',
 					null,
-					new PropertiesDataManager('Collection 1', driver),
+					new PropertiesDataManager(driver, 'namespace', 'Collection 1'),
 				);
 				await expect(propertiesTreeItem.load()).to.be.rejectedWith('Failed to describe collection');
 				const children = provider.getChildren(propertiesTreeItem);
-				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
+				expect(describeCollectionStub.calledOnceWith('namespace', 'Collection 1')).to.be.true;
 				expect(children).to.have.length(1);
 				const [child] = children;
 				expect(child).to.be.instanceOf(TreeItem);
@@ -884,11 +942,11 @@ describe('ConnectionTreeProvider', () => {
 				const propertiesTreeItem = new PropertiesTreeItem(
 					'Columns',
 					null,
-					new PropertiesDataManager('Collection 1', driver),
+					new PropertiesDataManager(driver, 'namespace', 'Collection 1'),
 				);
 				await expect(propertiesTreeItem.load()).to.be.fulfilled;
 				const children = provider.getChildren(propertiesTreeItem);
-				expect(describeCollectionStub.calledOnceWith('Collection 1')).to.be.true;
+				expect(describeCollectionStub.calledOnceWith('namespace', 'Collection 1')).to.be.true;
 				expect(children).to.have.length(2);
 				const [child1, child2] = children;
 				expect(child1).to.be.instanceOf(TreeItem);

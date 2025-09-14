@@ -107,6 +107,11 @@
 					"group": "inline"
 				},
 				{
+					"command": "db-lens.query",
+					"when": "view == dbLensSidebar && viewItem == namespace",
+					"group": "inline"
+				},
+				{
 					"command": "db-lens.reload",
 					"when": "view == dbLensSidebar && viewItem == connection.connected",
 					"group": "inline"

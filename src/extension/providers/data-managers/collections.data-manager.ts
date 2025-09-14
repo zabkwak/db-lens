@@ -3,15 +3,15 @@ import BaseDataManager from './base.data-manager';
 
 export default class CollectionsDataManager extends BaseDataManager<string> {
 	private _connection: Connection<any, any>;
+	private _namespace: string;
 
-	constructor(connection: Connection<any, any>) {
+	constructor(connection: Connection<any, any>, namespace: string) {
 		super();
 		this._connection = connection;
+		this._namespace = namespace;
 	}
 
 	protected async _loadData(): Promise<string[]> {
-		// TODO make this as one method?
-		await this._connection.loadCollections();
-		return this._connection.getCollections();
+		return this._connection.getCollections(this._namespace);
 	}
 }

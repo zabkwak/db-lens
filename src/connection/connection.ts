@@ -43,7 +43,6 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 	private _sshTunnel: SSHTunnel | null = null;
 	private _driver: BaseDriver<unknown, unknown>;
 	private _state: EState = EState.DISCONNECTED;
-	private _collections: string[] | null = null;
 
 	constructor(connection: IConnection<T, U>) {
 		// TODO validate all credentials
@@ -104,10 +103,6 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 		await this._driver.close();
 	}
 
-	public async loadCollections(): Promise<void> {
-		this._collections = await this._driver.getCollections();
-	}
-
 	public isConnected(): boolean {
 		return this._state === EState.CONNECTED;
 	}
@@ -120,16 +115,12 @@ export default class Connection<T extends keyof typeof drivers, U extends keyof 
 		return this._state === EState.FAILED;
 	}
 
-	public hasCollections(): boolean {
-		return this._collections !== null;
-	}
-
 	public getName(): string {
 		return this._name;
 	}
 
-	public getCollections(): string[] {
-		return this._collections || [];
+	public async getCollections(namespace: string): Promise<string[]> {
+		return this._driver.getCollections(namespace);
 	}
 
 	public getDriver(): BaseDriver<unknown, unknown> {

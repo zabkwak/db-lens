@@ -25,6 +25,7 @@ export interface IMysqlCredentials {
 	host: string;
 	port: number;
 	username: string;
+	/** @deprecated */
 	database: string;
 	sslRejectUnauthorized?: boolean;
 	disableSsl?: boolean;
@@ -66,16 +67,27 @@ interface ITransformResult<T> {
 export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> implements ISqlDriver {
 	private _pool: Pool | null = null;
 
-	public async getCollections(): Promise<string[]> {
-		const { data } = await this._executeQuery<{ table_name: string }>('SHOW TABLES', true);
+	public async getNamespaces(): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ Database: string }>(`SHOW DATABASES`);
+		await commit();
+		return data.map((row) => row.Database);
+	}
+
+	public async getCollections(namespace: string): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ table_name: string }>('SHOW TABLES', namespace);
+		await commit();
 		return data.map((row) => row.table_name);
 	}
 
-	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const { data } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
+	public async describeCollection(
+		namespace: string,
+		collectionName: string,
+	): Promise<ICollectionPropertyDescription[]> {
+		const { data, commit } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
 			`DESCRIBE \`${collectionName}\``,
-			true,
+			namespace,
 		);
+		await commit();
 		return data.map((record) => {
 			return {
 				name: record.Field,
@@ -87,19 +99,21 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		});
 	}
 
-	public async getViews(): Promise<string[]> {
-		const { data } = await this._executeQuery<{ table_name: string }>(
+	public async getViews(namespace: string): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ table_name: string }>(
 			`SHOW FULL TABLES WHERE Table_type = 'VIEW'`,
-			true,
+			namespace,
 		);
+		await commit();
 		return data.map((row) => row.table_name);
 	}
 
-	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		const { data } = await this._executeQuery<ICollectionIndexRecord>(
+	public async getIndexes(namespace: string, collectionName: string): Promise<IIndexDescription[]> {
+		const { data, commit } = await this._executeQuery<ICollectionIndexRecord>(
 			`SHOW INDEXES FROM \`${collectionName}\``,
-			true,
+			namespace,
 		);
+		await commit();
 		return data.reduce((acc, record) => {
 			if (!acc.find((idx) => idx.name === record.Key_name)) {
 				let kind: IIndexDescription['kind'] = 'INDEX';
@@ -148,7 +162,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 			port,
 			user: this._credentials.username,
 			password: this._password.password,
-			database: this._credentials.database,
+			// database: this._credentials.database,
 			ssl: this._credentials.disableSsl
 				? undefined
 				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
@@ -170,22 +184,22 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		this._pool = null;
 	}
 
-	protected async _query<T>(query: string, timeout: number): Promise<IQueryResult<T>> {
-		return this._executeQuery<T>(query, false, [], timeout);
+	protected async _query<T>(query: string, timeout: number, namespace: string | null): Promise<IQueryResult<T>> {
+		return this._executeQuery<T>(query, namespace, [], timeout);
 	}
 
 	private async _executeQuery<T>(query: string): Promise<IQueryResult<T>>;
-	private async _executeQuery<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
-	private async _executeQuery<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, namespace: string | null): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, namespace: string | null, params: any[]): Promise<IQueryResult<T>>;
 	private async _executeQuery<T>(
 		query: string,
-		autocommit: boolean,
+		namespace: string | null,
 		params: any[],
 		timeout: number,
 	): Promise<IQueryResult<T>>;
 	private async _executeQuery<T>(
 		query: string,
-		autocommit: boolean = true,
+		namespace: string | null = null,
 		params?: any[],
 		timeout: number = DEFAULT_EXECUTION_TIMEOUT,
 	): Promise<IQueryResult<T>> {
@@ -195,18 +209,23 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		await this._checkPassword();
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
-			params,
+			database: namespace,
 			timeout,
+			params,
 		});
 		let client: PoolConnection | null = null;
 		try {
 			client = await this._pool.getConnection();
 			await client.query(`SET SESSION max_execution_time = ${timeout}`);
+			if (namespace) {
+				await client.query(`USE \`${namespace}\``);
+			}
 			await client.query('BEGIN');
 			const [result, fieldPacket] = await client.query(query, params);
 			const duration = Date.now() - start;
 			const { data, rowCount, command } = this._transformResult<T>(result, query);
 			Logger.info('query', `Executed query: ${query}`, {
+				database: namespace,
 				params,
 				duration: `${duration}ms`,
 				rowCount,
@@ -218,28 +237,17 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 						type: this._convertColumnType(field),
 					};
 				}) || [];
-			if (autocommit) {
-				await client?.query('COMMIT');
-				Logger.info('query', `Autocommit enabled, committed transaction for query: ${query}`);
-				client?.release();
-			}
 			return {
 				data,
 				properties,
 				rowCount,
 				command,
 				commit: async () => {
-					if (autocommit) {
-						return;
-					}
 					await client?.query('COMMIT');
 					Logger.info('query', `Committed transaction for query: ${query}`);
 					client?.release();
 				},
 				rollback: async () => {
-					if (autocommit) {
-						return;
-					}
 					await client?.query('ROLLBACK');
 					Logger.info('query', `Rolled back transaction for query: ${query}`);
 					client?.release();

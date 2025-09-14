@@ -16,10 +16,17 @@ export default class ConnectionTreeItem<
 	U extends keyof typeof passwordProviders,
 > extends TreeItem {
 	private _connection: Connection<T, U>;
+	private _namespaces: string[] | null = null;
+
 	constructor(connection: Connection<T, U>, parent: TreeItem | null) {
 		super(connection.getName(), parent, vscode.TreeItemCollapsibleState.Collapsed);
 		this._connection = connection;
 		this.contextValue = EConnectionContextValue.DEFAULT;
+	}
+
+	public async connect(): Promise<void> {
+		await this._connection.connect();
+		this._namespaces = await this._connection.getDriver().getNamespaces();
 	}
 
 	public getConnection(): Connection<T, U> {
@@ -36,7 +43,7 @@ export default class ConnectionTreeItem<
 		return new vscode.ThemeIcon('database');
 	}
 
-	public async connect(): Promise<void> {
-		await this._connection.connect();
+	public getNamespaces(): string[] | null {
+		return this._namespaces;
 	}
 }

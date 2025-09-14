@@ -70,17 +70,23 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 		Logger.info(this, 'Connection closed');
 	}
 
-	public abstract getCollections(): Promise<string[]>;
+	public abstract getNamespaces(): Promise<string[]>;
 
-	public abstract describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]>;
+	public abstract getCollections(namespace: string): Promise<string[]>;
+
+	public abstract describeCollection(
+		namespace: string,
+		collectionName: string,
+	): Promise<ICollectionPropertyDescription[]>;
 
 	public query<T>(query: string): Promise<IQueryResult<T>>;
 	public query<T>(query: string, timeout: number): Promise<IQueryResult<T>>;
-	public async query<T>(query: string, timeout?: number): Promise<IQueryResult<T>> {
+	public query<T>(query: string, timeout: number, namespace: string): Promise<IQueryResult<T>>;
+	public async query<T>(query: string, timeout?: number, namespace?: string): Promise<IQueryResult<T>> {
 		if (!this.isConnected()) {
 			throw new Error('Database not connected');
 		}
-		return this._query(query, timeout || DEFAULT_EXECUTION_TIMEOUT);
+		return this._query(query, timeout || DEFAULT_EXECUTION_TIMEOUT, namespace || null);
 	}
 
 	public isConnected(): boolean {
@@ -105,5 +111,5 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 
 	protected abstract _close(): Promise<void>;
 
-	protected abstract _query<T>(query: string, timeout: number): Promise<IQueryResult<T>>;
+	protected abstract _query<T>(query: string, timeout: number, namespace: string | null): Promise<IQueryResult<T>>;
 }

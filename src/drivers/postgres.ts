@@ -18,6 +18,7 @@ export interface IPostgresCredentials {
 	username: string;
 	database: string;
 	sslRejectUnauthorized?: boolean;
+	/** @deprecated */
 	schema?: string;
 	disableSsl?: boolean;
 }
@@ -49,16 +50,30 @@ export default class PostgresDriver<U>
 {
 	private _pool: Pool | null = null;
 
-	public async getCollections(): Promise<string[]> {
-		const { data } = await this._executeQuery<{ tablename: string }>(
-			`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = current_schema() order by tablename asc`,
-			true,
+	public async getNamespaces(): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ nspname: string }>(
+			`SELECT nspname FROM pg_catalog.pg_namespace ORDER BY nspname ASC`,
+			null,
 		);
+		await commit();
+		return data.map((row) => row.nspname);
+	}
+
+	public async getCollections(namespace: string): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ tablename: string }>(
+			`SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = $1 order by tablename asc`,
+			null,
+			[namespace],
+		);
+		await commit();
 		return data.map((row) => row.tablename);
 	}
 
-	public async describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
-		const { data } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
+	public async describeCollection(
+		namespace: string,
+		collectionName: string,
+	): Promise<ICollectionPropertyDescription[]> {
+		const { data, commit } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
 			`SELECT
     c.column_name AS name,
     c.data_type AS type,
@@ -85,10 +100,12 @@ LEFT JOIN (
     AND c.table_name = pk.table_name
     AND c.column_name = pk.column_name
 WHERE
-    c.table_name = $1`,
-			true,
-			[collectionName],
+	c.table_schema = $1
+    AND c.table_name = $2`,
+			null,
+			[namespace, collectionName],
 		);
+		await commit();
 		return data.map((record): ICollectionPropertyDescription => {
 			return {
 				name: record.name,
@@ -100,16 +117,18 @@ WHERE
 		});
 	}
 
-	public async getViews(): Promise<string[]> {
-		const { data } = await this._executeQuery<{ viewname: string }>(
-			`SELECT viewname FROM pg_catalog.pg_views WHERE schemaname = current_schema() order by viewname asc`,
-			true,
+	public async getViews(namespace: string): Promise<string[]> {
+		const { data, commit } = await this._executeQuery<{ viewname: string }>(
+			`SELECT viewname FROM pg_catalog.pg_views WHERE schemaname = $1 order by viewname asc`,
+			null,
+			[namespace],
 		);
+		await commit();
 		return data.map((row) => row.viewname);
 	}
 
-	public async getIndexes(collectionName: string): Promise<IIndexDescription[]> {
-		const { data } = await this._executeQuery<ICollectionIndexRecord>(
+	public async getIndexes(namespace: string, collectionName: string): Promise<IIndexDescription[]> {
+		const { data, commit } = await this._executeQuery<ICollectionIndexRecord>(
 			`SELECT
     i.relname AS name,
     CASE
@@ -132,10 +151,11 @@ JOIN pg_class t ON t.oid = idx.indrelid
 JOIN pg_am am ON i.relam = am.oid
 JOIN pg_namespace n ON n.oid = t.relnamespace
 WHERE t.relname = $1
-  AND n.nspname = current_schema();`,
-			true,
-			[collectionName],
+  AND n.nspname = $2;`,
+			null,
+			[collectionName, namespace],
 		);
+		await commit();
 		return data.map((row): IIndexDescription => {
 			return {
 				name: row.name,
@@ -170,10 +190,6 @@ WHERE t.relname = $1
 				: { rejectUnauthorized: this._credentials.sslRejectUnauthorized ?? true },
 			statement_timeout: DEFAULT_EXECUTION_TIMEOUT,
 		});
-		const schema = this._credentials.schema || 'public';
-		this._pool.on('connect', (client) => {
-			client.query(`SET search_path TO ${schema}`);
-		});
 		await this._pool.query('SELECT NOW()');
 	}
 
@@ -182,22 +198,22 @@ WHERE t.relname = $1
 		this._pool = null;
 	}
 
-	protected async _query<T>(query: string, timeout: number): Promise<IQueryResult<T>> {
-		return this._executeQuery<T>(query, false, [], timeout);
+	protected async _query<T>(query: string, timeout: number, namespace: string | null): Promise<IQueryResult<T>> {
+		return this._executeQuery<T>(query, namespace, [], timeout);
 	}
 
 	private async _executeQuery<T>(query: string): Promise<IQueryResult<T>>;
-	private async _executeQuery<T>(query: string, autocommit: boolean): Promise<IQueryResult<T>>;
-	private async _executeQuery<T>(query: string, autocommit: boolean, params: any[]): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, namespace: string | null): Promise<IQueryResult<T>>;
+	private async _executeQuery<T>(query: string, namespace: string | null, params: any[]): Promise<IQueryResult<T>>;
 	private async _executeQuery<T>(
 		query: string,
-		autocommit: boolean,
+		namespace: string | null,
 		params: any[],
 		timeout: number,
 	): Promise<IQueryResult<T>>;
 	private async _executeQuery<T>(
 		query: string,
-		autocommit: boolean = true,
+		namespace: string | null = null,
 		params?: any[],
 		timeout: number = DEFAULT_EXECUTION_TIMEOUT,
 	): Promise<IQueryResult<T>> {
@@ -207,17 +223,22 @@ WHERE t.relname = $1
 		await this._checkPassword();
 		const start = Date.now();
 		Logger.info('query', `Executing query: ${query}`, {
-			params,
+			schema: namespace,
 			timeout,
+			params,
 		});
 		let client: PoolClient | null = null;
 		try {
 			client = await this._pool.connect();
 			await client.query(`SET statement_timeout = ${timeout}`);
+			if (namespace) {
+				await client.query(`SET search_path TO ${namespace}`);
+			}
 			await client.query('BEGIN');
 			const { rows, fields, rowCount, command } = await client.query(query, params);
 			const duration = Date.now() - start;
 			Logger.info('query', `Executed query: ${query}`, {
+				schema: namespace,
 				params,
 				duration: `${duration}ms`,
 				rowCount,
@@ -230,28 +251,17 @@ WHERE t.relname = $1
 					type: typeName,
 				};
 			});
-			if (autocommit) {
-				await client?.query('COMMIT');
-				Logger.info('query', `Autocommit enabled, committed transaction for query: ${query}`);
-				client?.release();
-			}
 			return {
 				data: rows as T[],
 				properties,
 				rowCount,
 				command: getCommand(command),
 				commit: async () => {
-					if (autocommit) {
-						return;
-					}
 					await client?.query('COMMIT');
 					Logger.info('query', `Committed transaction for query: ${query}`);
 					client?.release();
 				},
 				rollback: async () => {
-					if (autocommit) {
-						return;
-					}
 					await client?.query('ROLLBACK');
 					Logger.info('query', `Rolled back transaction for query: ${query}`);
 					client?.release();

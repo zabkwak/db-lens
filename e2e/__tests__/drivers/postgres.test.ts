@@ -238,9 +238,17 @@ describe('PostgreSQL Driver', () => {
 			await postgres.close();
 		});
 
+		describe('.getNamespaces', () => {
+			it('should return list of namespaces', async () => {
+				const namespaces = await postgres.getNamespaces();
+				expect(namespaces).to.be.an('array');
+				expect(namespaces).to.deep.equal(['information_schema', 'pg_catalog', 'pg_toast', 'public']);
+			});
+		});
+
 		describe('.getCollections', () => {
 			it('should return list of collections', async () => {
-				const collections = await postgres.getCollections();
+				const collections = await postgres.getCollections('public');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal(['commands', 'users']);
 			});
@@ -253,13 +261,13 @@ describe('PostgreSQL Driver', () => {
 
 			it('should return list of views', async () => {
 				await postgresQuery('CREATE VIEW test_view AS SELECT * FROM users');
-				const collections = await postgres.getViews();
+				const collections = await postgres.getViews('public');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal(['test_view']);
 			});
 
 			it('should return empty list of views', async () => {
-				const collections = await postgres.getViews();
+				const collections = await postgres.getViews('public');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal([]);
 			});
@@ -273,7 +281,7 @@ describe('PostgreSQL Driver', () => {
 			});
 
 			it('should return list of indexes for users table', async () => {
-				const collections = await postgres.getIndexes('users');
+				const collections = await postgres.getIndexes('public', 'users');
 				expect(collections).to.be.an('array');
 				expect(collections).to.deep.equal([
 					{
@@ -299,7 +307,7 @@ describe('PostgreSQL Driver', () => {
 
 			it('should return list of indexes with combined index added', async () => {
 				await postgresQuery('CREATE INDEX username_email ON users (username, email)');
-				const indexes = await postgres.getIndexes('users');
+				const indexes = await postgres.getIndexes('public', 'users');
 				expect(indexes).to.be.an('array');
 				expect(indexes).to.deep.equal([
 					{
@@ -332,7 +340,7 @@ describe('PostgreSQL Driver', () => {
 
 		describe('.describeCollection', () => {
 			it('should describe table', async () => {
-				const properties = await postgres.describeCollection('users');
+				const properties = await postgres.describeCollection('public', 'users');
 				expect(properties).to.be.an('array');
 				expect(properties).to.deep.equal([
 					{
@@ -371,6 +379,12 @@ describe('PostgreSQL Driver', () => {
 			it('should throw a not connected error', async () => {
 				await postgres.close();
 				await expect(postgres.query<IUser>('select * from users')).to.be.rejectedWith('Database not connected');
+			});
+
+			it('should throw an error for invalid relation in non-existing schema', async () => {
+				await expect(postgres.query<IUser>('select * from users', 5000, 'test')).to.be.rejectedWith(
+					'relation "users" does not exist',
+				);
 			});
 
 			it('should return all users', async () => {

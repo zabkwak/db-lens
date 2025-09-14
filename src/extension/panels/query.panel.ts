@@ -1,27 +1,28 @@
 import * as vscode from 'vscode';
 import { EQueryCommand, IPostMessage } from '../../../shared/types';
 import { isCommand } from '../../../shared/utils';
+import Connection from '../../connection/connection';
 import { IQueryResult } from '../../drivers/interfaces';
-import ConnectionTreeItem from '../providers/tree-items/connection.tree-item';
 import { confirmErrorDialog, confirmWarningDialog, showError, showInfo } from '../utils';
 import BasePanel from './base.panel';
 
 export default class QueryPanel extends BasePanel {
-	private _item: ConnectionTreeItem<any, any>;
+	private _connection: Connection<any, any>;
+	private _namespace: string | null;
 
-	constructor(item: ConnectionTreeItem<any, any>, context: vscode.ExtensionContext) {
-		super(context, `DB Lens - ${item.label}`, 'db-lens.queryEditor');
-		this._item = item;
+	constructor(connection: Connection<any, any>, context: vscode.ExtensionContext, namespace: string | null) {
+		super(context, `DB Lens - ${connection.getName()} | ${namespace}`, 'db-lens.queryEditor');
+		this._connection = connection;
+		this._namespace = namespace;
 	}
 
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
 		if (isCommand(message, 'query')) {
 			const { payload, requestId } = message;
 			try {
-				const result = await this._item
-					.getConnection()
+				const result = await this._connection
 					.getDriver()
-					.query(payload.query, payload.timeout as number);
+					.query(payload.query, payload.timeout as number, this._namespace as string);
 				if (result.command === EQueryCommand.SELECT) {
 					await result.commit();
 					this._sendQueryResult(result, requestId);
