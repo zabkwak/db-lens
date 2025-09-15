@@ -11,6 +11,9 @@ interface IUser {
 	id: string;
 	username: string;
 	email: string;
+	balance: number;
+	balance_cents: number;
+	deleted: boolean;
 	created_timestamp: string;
 }
 
@@ -266,6 +269,27 @@ describe('MySQL Driver', () => {
 						isPrimaryKey: false,
 					},
 					{
+						name: 'balance',
+						type: 'decimal(10,2)',
+						isNullable: false,
+						defaultValue: '0.00',
+						isPrimaryKey: false,
+					},
+					{
+						name: 'balance_cents',
+						type: 'int',
+						isNullable: false,
+						defaultValue: '0',
+						isPrimaryKey: false,
+					},
+					{
+						name: 'deleted',
+						type: 'tinyint(1)',
+						isNullable: false,
+						defaultValue: '0',
+						isPrimaryKey: false,
+					},
+					{
 						name: 'created_timestamp',
 						type: 'timestamp',
 						isNullable: false,
@@ -381,11 +405,14 @@ describe('MySQL Driver', () => {
 				expect(result.command).to.be.equal('select');
 				expect(result.rowCount).to.be.equal(5);
 				expect(result.properties).to.be.an('array');
-				expect(result.properties).to.have.length(4);
+				expect(result.properties).to.have.length(7);
 				expect(result.properties).to.deep.equal([
 					{ name: 'id', type: 'VARCHAR' },
 					{ name: 'username', type: 'VARCHAR' },
 					{ name: 'email', type: 'VARCHAR' },
+					{ name: 'balance', type: 'NEWDECIMAL' },
+					{ name: 'balance_cents', type: 'LONG' },
+					{ name: 'deleted', type: 'TINY' },
 					{ name: 'created_timestamp', type: 'TIMESTAMP' },
 				]);
 				expect(result.data).to.be.an('array');
@@ -394,22 +421,37 @@ describe('MySQL Driver', () => {
 				expect(user1.id).to.be.equal('user-1');
 				expect(user1.username).to.be.equal('krha');
 				expect(user1.email).to.be.equal('krha@example.com');
+				expect(user1.balance).to.be.equal('0.00');
+				expect(user1.balance_cents).to.be.equal(0);
+				expect(user1.deleted).to.be.equal(0);
 				expect(user1.created_timestamp).to.be.a('string');
 				expect(user2.id).to.be.equal('user-2');
 				expect(user2.username).to.be.equal('sheep');
 				expect(user2.email).to.be.equal('sheep@example.com');
+				expect(user2.balance).to.be.equal('0.00');
+				expect(user2.balance_cents).to.be.equal(0);
+				expect(user2.deleted).to.be.equal(0);
 				expect(user2.created_timestamp).to.be.a('string');
 				expect(user3.id).to.be.equal('user-3');
 				expect(user3.username).to.be.equal('painter');
 				expect(user3.email).to.be.equal('painter@example.com');
+				expect(user3.balance).to.be.equal('0.00');
+				expect(user3.balance_cents).to.be.equal(0);
+				expect(user3.deleted).to.be.equal(0);
 				expect(user3.created_timestamp).to.be.a('string');
 				expect(user4.id).to.be.equal('user-4');
 				expect(user4.username).to.be.equal('sloth-with-weird-worldview');
 				expect(user4.email).to.be.equal('sloth-with-weird-worldview@example.com');
+				expect(user4.balance).to.be.equal('0.00');
+				expect(user4.balance_cents).to.be.equal(0);
+				expect(user4.deleted).to.be.equal(0);
 				expect(user4.created_timestamp).to.be.a('string');
 				expect(user5.id).to.be.equal('user-5');
 				expect(user5.username).to.be.equal('draculas-cousin');
 				expect(user5.email).to.be.equal('draculas-cousin@example.com');
+				expect(user5.balance).to.be.equal('0.00');
+				expect(user5.balance_cents).to.be.equal(0);
+				expect(user5.deleted).to.be.equal(0);
 				expect(user5.created_timestamp).to.be.a('string');
 			});
 

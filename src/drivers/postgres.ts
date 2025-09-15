@@ -27,6 +27,9 @@ interface ICollectionPropertyDescriptionRecord {
 	is_nullable: 'YES' | 'NO';
 	default_value: string | null;
 	is_primary_key: boolean;
+	size: number | null;
+	precision: number | null;
+	scale: number | null;
 }
 
 interface ICollectionIndexRecord {
@@ -73,33 +76,35 @@ export default class PostgresDriver<U>
 	): Promise<ICollectionPropertyDescription[]> {
 		const { data, commit } = await this._executeQuery<ICollectionPropertyDescriptionRecord>(
 			`SELECT
-    c.column_name AS name,
-    c.data_type AS type,
-    c.is_nullable,
-    c.column_default AS default_value,
-    (pk.column_name IS NOT NULL) AS is_primary_key
-FROM
-    information_schema.columns AS c
-LEFT JOIN (
-    SELECT
-        kcu.table_schema,
-        kcu.table_name,
-        kcu.column_name
-    FROM
-        information_schema.key_column_usage AS kcu
-    JOIN
-        information_schema.table_constraints AS tc
-            ON kcu.constraint_name = tc.constraint_name
-            AND kcu.table_schema = tc.table_schema
-    WHERE
-        tc.constraint_type = 'PRIMARY KEY'
-) AS pk
-    ON c.table_schema = pk.table_schema
-    AND c.table_name = pk.table_name
-    AND c.column_name = pk.column_name
-WHERE
-	c.table_schema = $1
-    AND c.table_name = $2`,
+			c.column_name AS name,
+			c.data_type AS type,
+			c.is_nullable,
+			c.column_default AS default_value,
+			(pk.column_name IS NOT NULL) AS is_primary_key,
+			c.character_maximum_length AS size,
+			c.numeric_precision AS precision,
+			c.numeric_scale AS scale
+		FROM
+			information_schema.columns AS c
+		LEFT JOIN (
+			SELECT
+				kcu.table_schema,
+				kcu.table_name,
+				kcu.column_name
+			FROM
+				information_schema.key_column_usage AS kcu
+			JOIN
+				information_schema.table_constraints AS tc
+					ON kcu.constraint_name = tc.constraint_name
+					AND kcu.table_schema = tc.table_schema
+			WHERE
+				tc.constraint_type = 'PRIMARY KEY'
+		) AS pk
+			ON c.table_schema = pk.table_schema
+			AND c.table_name = pk.table_name
+			AND c.column_name = pk.column_name
+		WHERE
+			c.table_schema = $1 AND c.table_name = $2`,
 			null,
 			[namespace, collectionName],
 		);
@@ -107,7 +112,7 @@ WHERE
 		return data.map((record): ICollectionPropertyDescription => {
 			return {
 				name: record.name,
-				type: record.type,
+				type: this._convertColumnType(record.type, record.size, record.precision, record.scale),
 				isNullable: record.is_nullable === 'YES',
 				defaultValue: record.default_value,
 				isPrimaryKey: record.is_primary_key,
@@ -287,5 +292,31 @@ WHERE t.relname = $1
 
 	private _getPort(): number {
 		return (this._sshTunnel?.getLocalPort() ?? this._credentials.port) as number;
+	}
+
+	private _convertColumnType(
+		type: string,
+		size: number | null,
+		precision: number | null,
+		scale: number | null,
+	): string {
+		switch (type.toLowerCase()) {
+			case 'character varying':
+				type = 'varchar';
+			case 'varchar':
+			case 'character':
+			case 'char':
+				return size ? `${type}(${size})` : type;
+			case 'numeric':
+			case 'decimal':
+				if (precision !== null && scale !== null) {
+					return `${type}(${precision},${scale})`;
+				}
+				if (precision !== null) {
+					return `${type}(${precision})`;
+				}
+			default:
+				return type;
+		}
 	}
 }
