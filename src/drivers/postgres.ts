@@ -2,9 +2,11 @@ import assert from 'node:assert';
 import { Pool, PoolClient, types } from 'pg';
 import Logger, { ILoggingInstance } from '../logger';
 import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
+import connected from './decorators/connected';
 import StatementTimeoutError from './errors/statement-timeout.error';
 import {
 	ICollectionPropertyDescription,
+	IExplainResult,
 	IIndexDescription,
 	IQueryResult,
 	IQueryResultCollectionPropertyDescription,
@@ -38,6 +40,10 @@ interface ICollectionIndexRecord {
 	type: string;
 	columns: string;
 	condition: string | null;
+}
+
+interface IQueryPlan {
+	'QUERY PLAN': string;
 }
 
 // OID 1082 = DATE, 1114 = TIMESTAMP, 1184 = TIMESTAMPTZ
@@ -167,6 +173,34 @@ WHERE t.relname = $1
 				columns: row.columns.split(','),
 			};
 		});
+	}
+
+	public explain(query: string): Promise<IExplainResult>;
+	public explain(query: string, timeout: number): Promise<IExplainResult>;
+	public explain(query: string, timeout: number, namespace: string): Promise<IExplainResult>;
+	@connected
+	public async explain(query: string, timeout?: number, namespace?: string): Promise<IExplainResult> {
+		const result = await this._query<IQueryPlan>(`EXPLAIN ${query}`, timeout as number, namespace as string);
+		await result.rollback();
+		return {
+			plan: result.data.map((p) => p['QUERY PLAN']),
+		};
+	}
+
+	public explainAnalyze(query: string): Promise<IExplainResult>;
+	public explainAnalyze(query: string, timeout: number): Promise<IExplainResult>;
+	public explainAnalyze(query: string, timeout: number, namespace: string): Promise<IExplainResult>;
+	@connected
+	public async explainAnalyze(query: string, timeout?: number, namespace?: string): Promise<IExplainResult> {
+		const result = await this._query<IQueryPlan>(
+			`EXPLAIN ANALYZE ${query}`,
+			timeout as number,
+			namespace as string,
+		);
+		await result.rollback();
+		return {
+			plan: result.data.map((p) => p['QUERY PLAN']),
+		};
 	}
 
 	public getTag(): string {

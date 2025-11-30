@@ -11,15 +11,18 @@ import assert from 'node:assert';
 import { EQueryCommand } from '../../shared/types';
 import Logger from '../logger';
 import BaseDriver, { DEFAULT_EXECUTION_TIMEOUT } from './base';
+import connected from './decorators/connected';
 import StatementTimeoutError from './errors/statement-timeout.error';
 import {
 	ICollectionPropertyDescription,
+	IExplainResult,
 	IIndexDescription,
+	IMySQLExplainRow,
 	IQueryResult,
 	IQueryResultCollectionPropertyDescription,
 	ISqlDriver,
 } from './interfaces';
-import { getCommandFromQuery } from './sql/utils';
+import { formatMySQLExplain, getCommandFromQuery } from './sql/utils';
 
 export interface IMysqlCredentials {
 	host: string;
@@ -60,6 +63,10 @@ interface ITransformResult<T> {
 	data: T[];
 	rowCount: number;
 	command: EQueryCommand;
+}
+
+interface IExplain {
+	EXPLAIN: string;
 }
 
 export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> implements ISqlDriver {
@@ -140,6 +147,30 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 				return index;
 			});
 		}, [] as IIndexDescription[]);
+	}
+
+	public explain(query: string): Promise<IExplainResult>;
+	public explain(query: string, timeout: number): Promise<IExplainResult>;
+	public explain(query: string, timeout: number, namespace: string): Promise<IExplainResult>;
+	@connected
+	public async explain(query: string, timeout?: number, namespace?: string): Promise<IExplainResult> {
+		const result = await this._query<IMySQLExplainRow>(`EXPLAIN ${query}`, timeout as number, namespace as string);
+		await result.rollback();
+		return {
+			plan: formatMySQLExplain(result.data),
+		};
+	}
+
+	public explainAnalyze(query: string): Promise<IExplainResult>;
+	public explainAnalyze(query: string, timeout: number): Promise<IExplainResult>;
+	public explainAnalyze(query: string, timeout: number, namespace: string): Promise<IExplainResult>;
+	@connected
+	public async explainAnalyze(query: string, timeout?: number, namespace?: string): Promise<IExplainResult> {
+		const result = await this._query<IExplain>(`EXPLAIN ANALYZE ${query}`, timeout as number, namespace as string);
+		await result.rollback();
+		return {
+			plan: result.data.map((p) => p.EXPLAIN.split('\n').filter(Boolean)).flat(),
+		};
 	}
 
 	public getTag(): string {

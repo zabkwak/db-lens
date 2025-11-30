@@ -36,6 +36,8 @@ describe('Drivers Utils', () => {
 			const driver = {
 				getViews: () => [],
 				getIndexes: () => [],
+				explain: () => {},
+				explainAnalyze: () => {},
 			} as unknown as BaseDriver<any, any>;
 			expect(isSqlDriver(driver)).to.be.true;
 		});

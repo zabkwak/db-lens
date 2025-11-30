@@ -17,6 +17,7 @@ export enum EQueryCommand {
 	SELECT = 'select',
 	INSERT = 'insert',
 	DELETE = 'delete',
+	EXPLAIN = 'explain',
 }
 
 export interface IMessagePayload {
@@ -30,6 +31,20 @@ export interface IMessagePayload {
 		rowCount: number | null;
 		command: EQueryCommand;
 	}>;
+	'query.explain': {
+		query: string;
+		timeout?: number;
+	};
+	'query.explain.result': IResult<{
+		plan: string[];
+	}>;
+	'query.explainAnalyze': {
+		query: string;
+		timeout?: number;
+	};
+	'query.explainAnalyze.result': IResult<{
+		plan: string[];
+	}>;
 	log: {
 		level: 'info' | 'warn' | 'error';
 		message: string;
@@ -38,6 +53,7 @@ export interface IMessagePayload {
 	navigation: {
 		route: string;
 		data: object;
+		platform: TPlatform;
 	};
 	ready: null;
 	testConnection: IConnectionConfiguration;
@@ -112,3 +128,16 @@ export interface IConnectionConfiguration {
 		};
 	};
 }
+
+export type TPlatform =
+	| 'aix'
+	| 'android'
+	| 'darwin'
+	| 'freebsd'
+	| 'haiku'
+	| 'linux'
+	| 'openbsd'
+	| 'sunos'
+	| 'win32'
+	| 'cygwin'
+	| 'netbsd';

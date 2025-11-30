@@ -545,5 +545,24 @@ describe('PostgreSQL Driver', () => {
 					.and.to.have.property('code', 'ERR_STATEMENT_TIMEOUT');
 			});
 		});
+
+		describe('.explain', () => {
+			it('should explain the query', async () => {
+				const result = await postgres.explain(`SELECT * FROM users where id = '1'`);
+				expect(result).to.have.all.keys('plan');
+				expect(result.plan).to.be.an('array');
+				expect(result.plan.length).to.be.equal(2);
+				console.log(result);
+			});
+		});
+
+		describe('.explainAnalyze', () => {
+			it('should explain analyze the query', async () => {
+				const result = await postgres.explainAnalyze(`SELECT * FROM users where id = '1'`);
+				expect(result).to.have.all.keys('plan');
+				expect(result.plan).to.be.an('array');
+				expect(result.plan.length).to.be.equal(5);
+			});
+		});
 	});
 });

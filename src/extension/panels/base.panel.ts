@@ -86,6 +86,7 @@ export default abstract class BasePanel {
 					payload: {
 						route: this._panel.viewType,
 						data: await this._getInitialData(),
+						platform: process.platform,
 					},
 				});
 				return;

@@ -549,5 +549,23 @@ describe('MySQL Driver', () => {
 					.and.to.have.property('code', 'ERR_STATEMENT_TIMEOUT');
 			});
 		});
+
+		describe('.explain', () => {
+			it('should explain the query', async () => {
+				const result = await mysql.explain('SELECT * FROM users where id = 1', 5000, 'db_lens');
+				expect(result).to.have.all.keys('plan');
+				expect(result.plan).to.be.an('array');
+				expect(result.plan.length).to.be.equal(4);
+			});
+		});
+
+		describe('.explainAnalyze', () => {
+			it('should explain analyze the query', async () => {
+				const result = await mysql.explainAnalyze('SELECT * FROM users where id = 1', 5000, 'db_lens');
+				expect(result).to.have.all.keys('plan');
+				expect(result.plan).to.be.an('array');
+				expect(result.plan.length).to.be.equal(2);
+			});
+		});
 	});
 });
