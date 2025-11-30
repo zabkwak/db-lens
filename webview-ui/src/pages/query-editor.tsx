@@ -1,6 +1,6 @@
 import { VSCodeButton, VSCodeDivider, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
 import React, { useState } from 'react';
-import { IMessagePayload } from '../../../shared/types';
+import { IMessagePayload, TPlatform } from '../../../shared/types';
 import FormControl from '../components/form-control';
 import Loader from '../components/loader';
 import Table from '../components/table';
@@ -17,7 +17,7 @@ interface IResult<T extends TResult> {
 }
 
 interface IProps {
-	platform: 'darwin' | 'win32' | 'linux' | string;
+	platform: TPlatform;
 }
 
 function isResultType<T extends TResult>(

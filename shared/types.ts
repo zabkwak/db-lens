@@ -53,7 +53,7 @@ export interface IMessagePayload {
 	navigation: {
 		route: string;
 		data: object;
-		platform: string;
+		platform: TPlatform;
 	};
 	ready: null;
 	testConnection: IConnectionConfiguration;
@@ -128,3 +128,16 @@ export interface IConnectionConfiguration {
 		};
 	};
 }
+
+export type TPlatform =
+	| 'aix'
+	| 'android'
+	| 'darwin'
+	| 'freebsd'
+	| 'haiku'
+	| 'linux'
+	| 'openbsd'
+	| 'sunos'
+	| 'win32'
+	| 'cygwin'
+	| 'netbsd';
