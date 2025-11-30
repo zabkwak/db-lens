@@ -18,7 +18,10 @@ const App: React.FC = () => {
 		if (isCommand(message, 'navigation')) {
 			setRoute(message.payload.route);
 			if (message.payload.data) {
-				setInitialData(message.payload.data);
+				setInitialData({
+					...message.payload.data,
+					platform: message.payload.platform,
+				});
 			}
 			return;
 		}
