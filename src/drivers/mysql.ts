@@ -270,6 +270,7 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 				data,
 				properties,
 				rowCount,
+				duration,
 				command,
 				commit: async () => {
 					await client?.query('COMMIT');

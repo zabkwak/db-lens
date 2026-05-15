@@ -10,6 +10,7 @@ export interface IQueryResult<T> {
 	data: T[];
 	properties: IQueryResultCollectionPropertyDescription[];
 	rowCount: number | null;
+	duration: number;
 	command: EQueryCommand;
 	commit: () => Promise<void>;
 	rollback: () => Promise<void>;
