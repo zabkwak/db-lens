@@ -20,7 +20,10 @@ export const vscode =
 							payload: {
 								route: params.get('route'),
 								data: {
-									name: 'Test Connection',
+									connection: {
+										name: 'Test Connection',
+									},
+									groups: [],
 								},
 							},
 						});

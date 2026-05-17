@@ -24,5 +24,8 @@
 	& > .result-section {
 		flex: 1 1 0;
 		padding: 12px;
+		& > pre {
+			overflow: auto;
+		}
 	}
 }

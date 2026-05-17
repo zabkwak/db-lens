@@ -64,6 +64,7 @@ describe('Request', () => {
 							columns: [],
 							command: EQueryCommand.SELECT,
 							rowCount: 0,
+							duration: 0,
 						},
 					},
 					requestId: 'test',
@@ -77,6 +78,7 @@ describe('Request', () => {
 					columns: [],
 					command: EQueryCommand.SELECT,
 					rowCount: 0,
+					duration: 0,
 				},
 			});
 		});

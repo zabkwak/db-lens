@@ -13,5 +13,6 @@
 	"mochaExplorer.configFile": ".mocharc.js",
 	// "mochaExplorer.envPath": "./.env.test",
 	"mochaExplorer.jobs": 1,
-	"mochaExplorer.parallel": false
+	"mochaExplorer.parallel": false,
+	"js/ts.tsdk.path": "node_modules/typescript/lib"
 }

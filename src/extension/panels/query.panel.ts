@@ -4,6 +4,7 @@ import { isCommand } from '../../../shared/utils';
 import Connection from '../../connection/connection';
 import { IQueryResult } from '../../drivers/interfaces';
 import { isSqlDriver } from '../../drivers/utils';
+import Logger from '../../logger';
 import { confirmErrorDialog, confirmWarningDialog, showError, showInfo } from '../utils';
 import BasePanel from './base.panel';
 
@@ -18,109 +19,125 @@ export default class QueryPanel extends BasePanel {
 	}
 
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
-		const driver = this._connection.getDriver();
-		const { payload, requestId } = message;
 		if (isCommand(message, 'query')) {
-			try {
-				const result = await driver.query(payload.query, payload.timeout as number, this._namespace as string);
-				if (result.command === EQueryCommand.SELECT) {
-					await result.commit();
-					this._sendQueryResult(result, requestId);
-					return;
-				}
-				if (result.command === EQueryCommand.EXPLAIN) {
-					await result.rollback();
-					throw new Error('EXPLAIN queries are not supported in this context.');
-				}
-				let confirmed = false;
-				switch (result.command) {
-					case EQueryCommand.UPDATE:
-						confirmed = await confirmWarningDialog(
-							`The query will change ${result.rowCount} rows. Proceed?`,
-							'Confirm',
-						);
-						break;
-					case EQueryCommand.INSERT:
-						confirmed = await confirmWarningDialog(
-							`The query will insert ${result.rowCount} rows. Proceed?`,
-							'Confirm',
-						);
-						break;
-					case EQueryCommand.DELETE:
-						confirmed = await confirmErrorDialog(
-							`The query will delete ${result.rowCount} rows. Proceed?`,
-							'Confirm',
-						);
-						break;
-					default:
-						confirmed = await confirmWarningDialog(
-							`This query may alter the database schema or data. Proceed?`,
-							'Confirm',
-						);
-						break;
-				}
-				if (confirmed) {
-					await result.commit();
-					showInfo(`Query executed successfully, affected ${result.rowCount} rows.`);
-					this._sendQueryResult(result, requestId);
-					return;
-				}
-				await result.rollback();
-				this._sendQueryError(new Error('Query was canceled'), requestId);
-			} catch (error: any) {
-				this._sendQueryError(error, requestId);
-			}
+			await this._handleQuery(message.payload, message.requestId);
 			return;
 		}
 		if (isCommand(message, 'query.explain')) {
-			try {
-				if (!isSqlDriver(driver)) {
-					throw new Error(`${driver.getName()} does not support EXPLAIN queries.`);
-				}
-				const result = await driver.explain(
-					payload.query,
-					payload.timeout as number,
-					this._namespace as string,
-				);
-				this.postMessage({
-					command: 'query.explain.result',
-					payload: {
-						success: true,
-						data: {
-							plan: result.plan,
-						},
-					},
-					requestId,
-				});
-			} catch (error: any) {
-				this._sendError(error, 'query.explain.result', requestId);
-			}
+			await this._handleExplain(message.payload, message.requestId);
 			return;
 		}
 		if (isCommand(message, 'query.explainAnalyze')) {
-			try {
-				if (!isSqlDriver(driver)) {
-					throw new Error(`${driver.getName()} does not support EXPLAIN ANALYZE queries.`);
-				}
-				const result = await driver.explainAnalyze(
-					payload.query,
-					payload.timeout as number,
-					this._namespace as string,
-				);
-				this.postMessage({
-					command: 'query.explainAnalyze.result',
-					payload: {
-						success: true,
-						data: {
-							plan: result.plan,
-						},
-					},
-					requestId,
-				});
-			} catch (error: any) {
-				this._sendError(error, 'query.explainAnalyze.result', requestId);
-			}
+			await this._handleExplainAnalyze(message.payload, message.requestId);
 			return;
+		}
+		Logger.error('extension', 'Received unknown command in QueryPanel', {
+			command: message.command,
+		});
+	}
+
+	private async _handleQuery(payload: IMessagePayload['query'], requestId?: string): Promise<void> {
+		try {
+			const result = await this._connection
+				.getDriver()
+				.query(payload.query, payload.timeout as number, this._namespace as string);
+			if (result.command === EQueryCommand.SELECT) {
+				await result.commit();
+				this._sendQueryResult(result, requestId);
+				return;
+			}
+			if (result.command === EQueryCommand.EXPLAIN) {
+				await result.rollback();
+				throw new Error('EXPLAIN queries are not supported in this context.');
+			}
+			let confirmed = false;
+			switch (result.command) {
+				case EQueryCommand.UPDATE:
+					confirmed = await confirmWarningDialog(
+						`The query will change ${result.rowCount} rows. Proceed?`,
+						'Confirm',
+					);
+					break;
+				case EQueryCommand.INSERT:
+					confirmed = await confirmWarningDialog(
+						`The query will insert ${result.rowCount} rows. Proceed?`,
+						'Confirm',
+					);
+					break;
+				case EQueryCommand.DELETE:
+					confirmed = await confirmErrorDialog(
+						`The query will delete ${result.rowCount} rows. Proceed?`,
+						'Confirm',
+					);
+					break;
+				default:
+					confirmed = await confirmWarningDialog(
+						`This query may alter the database schema or data. Proceed?`,
+						'Confirm',
+					);
+					break;
+			}
+			if (confirmed) {
+				await result.commit();
+				showInfo(`Query executed successfully, affected ${result.rowCount} rows.`);
+				this._sendQueryResult(result, requestId);
+				return;
+			}
+			await result.rollback();
+			this._sendQueryError(new Error('Query was canceled'), requestId);
+		} catch (error: any) {
+			this._sendQueryError(error, requestId);
+		}
+	}
+
+	private async _handleExplain(payload: IMessagePayload['query.explain'], requestId?: string): Promise<void> {
+		const driver = this._connection.getDriver();
+		try {
+			if (!isSqlDriver(driver)) {
+				throw new Error(`${driver.getName()} does not support EXPLAIN queries.`);
+			}
+			const result = await driver.explain(payload.query, payload.timeout as number, this._namespace as string);
+			this.postMessage({
+				command: 'query.explain.result',
+				payload: {
+					success: true,
+					data: {
+						plan: result.plan,
+					},
+				},
+				requestId,
+			});
+		} catch (error: any) {
+			this._sendError(error, 'query.explain.result', requestId);
+		}
+	}
+
+	private async _handleExplainAnalyze(
+		payload: IMessagePayload['query.explainAnalyze'],
+		requestId?: string,
+	): Promise<void> {
+		const driver = this._connection.getDriver();
+		try {
+			if (!isSqlDriver(driver)) {
+				throw new Error(`${driver.getName()} does not support EXPLAIN ANALYZE queries.`);
+			}
+			const result = await driver.explainAnalyze(
+				payload.query,
+				payload.timeout as number,
+				this._namespace as string,
+			);
+			this.postMessage({
+				command: 'query.explainAnalyze.result',
+				payload: {
+					success: true,
+					data: {
+						plan: result.plan,
+					},
+				},
+				requestId,
+			});
+		} catch (error: any) {
+			this._sendError(error, 'query.explainAnalyze.result', requestId);
 		}
 	}
 
@@ -133,6 +150,7 @@ export default class QueryPanel extends BasePanel {
 					data: result.data,
 					columns: result.properties,
 					rowCount: result.rowCount,
+					duration: result.duration,
 					command: result.command,
 				},
 			},

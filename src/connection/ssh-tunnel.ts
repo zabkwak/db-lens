@@ -232,9 +232,21 @@ export default class SSHTunnel {
 	}
 
 	private _processStdError(data: Buffer): void {
-		const message: string = data.toString().trim();
+		const message = data.toString().trim();
 		if (message.startsWith('Warning: Permanently added')) {
 			Logger.warn('ssh-tunnel', message);
+			return;
+		}
+		if (message.startsWith('debug')) {
+			Logger.info('ssh-tunnel', message);
+			return;
+		}
+		if (message.startsWith('** WARNING')) {
+			Logger.warn('ssh-tunnel', message);
+			return;
+		}
+		if (message.startsWith('Pseudo-terminal')) {
+			Logger.info('ssh-tunnel', message);
 			return;
 		}
 		throw new SSHTunnelError(message);

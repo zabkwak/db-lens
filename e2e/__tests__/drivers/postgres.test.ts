@@ -405,7 +405,15 @@ describe('PostgreSQL Driver', () => {
 			it('should return all users', async () => {
 				const result = await postgres.query<IUser>('select * from users');
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('select');
@@ -466,7 +474,15 @@ describe('PostgreSQL Driver', () => {
 					"INSERT INTO commands (id, user_id, command) VALUES ('test', 'user-1', 'insert-command')",
 				);
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('insert');
@@ -493,7 +509,15 @@ describe('PostgreSQL Driver', () => {
 				);
 				const result = await postgres.query("UPDATE commands SET command = 'update-command' WHERE id = 'test'");
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('update');
@@ -520,7 +544,15 @@ describe('PostgreSQL Driver', () => {
 				);
 				const result = await postgres.query("DELETE FROM commands WHERE id = 'test'");
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('delete');

@@ -11,15 +11,23 @@ import Request from '../request';
 import { classNames } from '../utils';
 import './config.scss';
 
-const Config: React.FC<IConnectionConfiguration> = (props) => {
-	const [isUpdate, setIsUpdate] = useState(!!props.name);
-	const [isSSHTunnelEnabled, setSSHTunnelEnabled] = useState(!!props.sshTunnelOptions);
-	const [driver, setDriver] = useState<keyof typeof driverOptions>(props.db?.driver || drivers[0]);
+interface IProps {
+	connection: IConnectionConfiguration;
+	// TODO
+	groups: any;
+}
+
+const Config: React.FC<IProps> = (props) => {
+	const [isUpdate, setIsUpdate] = useState(!!props.connection.name);
+	const [isSSHTunnelEnabled, setSSHTunnelEnabled] = useState(!!props.connection.sshTunnelOptions);
+	const [driver, setDriver] = useState<keyof typeof driverOptions>(props.connection.db?.driver || drivers[0]);
 	const [passwordProvider, setPasswordProvider] = useState<keyof typeof passwordProviderOptions>(
-		props.db?.passwordProvider?.name || passwordProviders[0],
+		props.connection.db?.passwordProvider?.name || passwordProviders[0],
 	);
 	const [isLoading, setIsLoading] = useState(false);
 	const [testConnectionSuccess, setTestConnectionSuccess] = useState<boolean | null>(null);
+	// const [groupsPath, setGroupsPath] = useState<string[] | undefined>(props.connection.groupsPath);
+	// const [groups, setGroups] = useState<any>(props.groups);
 
 	function handleDriverChange(value: string) {
 		setDriver(value as keyof typeof driverOptions);
@@ -37,6 +45,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 		setTestConnectionSuccess(null);
 		if (!formRef.current?.isValid()) {
 			Logger.warn('Form is invalid');
+			setIsLoading(false);
 			return;
 		}
 		const data = formRef.current?.getData();
@@ -110,7 +119,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 						placeholder="Enter connection name"
 						disabled={isUpdate || isLoading}
 						required
-						defaultValue={props.name}
+						defaultValue={props.connection.name}
 					/>
 					<FormGroup
 						label="Enable SSH Tunnel"
@@ -125,7 +134,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							placeholder="Enter SSH Host"
 							disabled={isLoading}
 							required
-							defaultValue={props.sshTunnelOptions?.host || ''}
+							defaultValue={props.connection.sshTunnelOptions?.host || ''}
 						/>
 						<FormControl
 							name="sshTunnel.port"
@@ -134,7 +143,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							placeholder="Enter SSH Port"
 							disabled={isLoading}
 							required
-							defaultValue={props.sshTunnelOptions?.port || 22}
+							defaultValue={props.connection.sshTunnelOptions?.port || 22}
 						/>
 						<FormControl
 							name="sshTunnel.username"
@@ -142,7 +151,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							label="SSH Username"
 							placeholder="Enter SSH Username"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.username || ''}
+							defaultValue={props.connection.sshTunnelOptions?.username || ''}
 						/>
 						<FormControl
 							name="sshTunnel.privateKey"
@@ -150,7 +159,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							label="Private Key Path"
 							placeholder="Enter Private Key Path"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.privateKey || ''}
+							defaultValue={props.connection.sshTunnelOptions?.privateKey || ''}
 						/>
 						<FormControl
 							name="sshTunnel.passphrase"
@@ -158,7 +167,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							label="Passphrase (if required)"
 							placeholder="Enter Passphrase (if required)"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.passphrase || ''}
+							defaultValue={props.connection.sshTunnelOptions?.passphrase || ''}
 						/>
 						<FormControl
 							name="sshTunnel.localPort"
@@ -166,7 +175,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							label="Local Port"
 							placeholder="Enter local port"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.localPort?.toString() ?? ''}
+							defaultValue={props.connection.sshTunnelOptions?.localPort?.toString() ?? ''}
 						/>
 						<FormControl
 							name="sshTunnel.connectionTimeout"
@@ -174,7 +183,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 							label="Connection Timeout (ms)"
 							placeholder="Enter Connection Timeout (ms)"
 							disabled={isLoading}
-							defaultValue={props.sshTunnelOptions?.connectionTimeout ?? 10000}
+							defaultValue={props.connection.sshTunnelOptions?.connectionTimeout ?? 10000}
 						/>
 					</FormGroup>
 					<FormControl
@@ -199,7 +208,7 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 								placeholder={option.placeholder}
 								disabled={isLoading}
 								required={option.required}
-								defaultValue={props.db?.credentials[option.key] ?? option.defaultValue}
+								defaultValue={props.connection.db?.credentials[option.key] ?? option.defaultValue}
 							/>
 						))}
 						<FormControl
@@ -224,7 +233,9 @@ const Config: React.FC<IConnectionConfiguration> = (props) => {
 									placeholder={option.placeholder}
 									disabled={isLoading}
 									required={option.required}
-									defaultValue={props.db?.passwordProvider.options[option.key] ?? option.defaultValue}
+									defaultValue={
+										props.connection.db?.passwordProvider.options[option.key] ?? option.defaultValue
+									}
 								/>
 							))}
 						</FormGroup>

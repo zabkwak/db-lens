@@ -123,11 +123,18 @@ export default class ConfigPanel extends BasePanel {
 		}
 	}
 
+	// TODO improve typing
 	protected async _getInitialData(): Promise<object> {
 		if (!this._item) {
-			return {};
+			return {
+				connection: {},
+				groups: [],
+			};
 		}
-		return this._item.getConnection().getConfiguration();
+		return {
+			connection: this._item.getConnection().getConfiguration(),
+			groups: [],
+		};
 	}
 
 	private _constructConnection(payload: IConnectionConfiguration): Connection<any, any> {

@@ -1,13 +1,16 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": ".",
 		},
 		{
-			"path": "./webview-ui"
+			"path": "./webview-ui",
 		},
 		{
-			"path": "./e2e"
-		}
-	]
+			"path": "./e2e",
+		},
+	],
+	"settings": {
+		"js/ts.tsdk.path": "db-lens/node_modules/typescript/lib",
+	},
 }

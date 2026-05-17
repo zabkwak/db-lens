@@ -1,7 +1,7 @@
 import { VSCodeDataGrid, VSCodeDataGridCell, VSCodeDataGridRow } from '@vscode/webview-ui-toolkit/react';
 import { JSX, useEffect, useState } from 'react';
 import { IColumn } from '../../../shared/types';
-import { classNames, pluralize } from '../utils';
+import { classNames, durationToString, pluralize } from '../utils';
 import FormControl from './form-control';
 import Loader from './loader';
 import './table.scss';
@@ -10,6 +10,8 @@ interface IProps<T extends object> {
 	data?: T[];
 	columns?: IColumn[];
 	loading?: boolean;
+	rows?: number;
+	duration?: number;
 }
 
 function getValue(value: any): string {
@@ -108,7 +110,9 @@ export default function Table<T extends object>(props: IProps<T>): JSX.Element {
 				</div>
 			)}
 			<div className="table-footer">
-				{props.data && !props.loading ? `Found ${pluralize(props.data.length, 'row')}` : null}
+				{props.data && !props.loading && props.rows != null && props.duration != null
+					? `Found ${pluralize(props.rows, 'row')} in ${durationToString(props.duration)}`
+					: null}
 			</div>
 		</div>
 	);

@@ -29,6 +29,7 @@ export interface IMessagePayload {
 		data: any[];
 		columns: IColumn[];
 		rowCount: number | null;
+		duration: number;
 		command: EQueryCommand;
 	}>;
 	'query.explain': {
@@ -127,6 +128,7 @@ export interface IConnectionConfiguration {
 			options: Record<string, any>;
 		};
 	};
+	groupsPath?: string[];
 }
 
 export type TPlatform =

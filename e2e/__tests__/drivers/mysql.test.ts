@@ -399,7 +399,15 @@ describe('MySQL Driver', () => {
 			it('should return all users', async () => {
 				const result = await mysql.query<IUser>('select * from users', 5000, 'db_lens');
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('select');
@@ -462,7 +470,15 @@ describe('MySQL Driver', () => {
 					'db_lens',
 				);
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('insert');
@@ -493,7 +509,15 @@ describe('MySQL Driver', () => {
 					'db_lens',
 				);
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('update');
@@ -520,7 +544,15 @@ describe('MySQL Driver', () => {
 				);
 				const result = await mysql.query("DELETE FROM commands WHERE id = 'test'", 5000, 'db_lens');
 				await result.commit();
-				expect(result).to.have.all.keys('data', 'properties', 'command', 'rowCount', 'commit', 'rollback');
+				expect(result).to.have.all.keys(
+					'data',
+					'properties',
+					'command',
+					'rowCount',
+					'duration',
+					'commit',
+					'rollback',
+				);
 				expect(result.rollback).to.be.a('function');
 				expect(result.commit).to.be.a('function');
 				expect(result.command).to.be.equal('delete');

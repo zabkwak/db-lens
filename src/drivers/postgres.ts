@@ -292,6 +292,7 @@ WHERE t.relname = $1
 				data: rows as T[],
 				properties,
 				rowCount,
+				duration,
 				command: getCommand(command),
 				commit: async () => {
 					await client?.query('COMMIT');

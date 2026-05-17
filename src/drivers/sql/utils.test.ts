@@ -27,6 +27,14 @@ describe('SQL Utils', () => {
 		it('should throw an error for unsupported command', () => {
 			expect(() => getCommand('UNSUPPORTED')).to.throw(Error, 'Unsupported command: UNSUPPORTED');
 		});
+
+		it('should throw an error for CREATE INDEX command', () => {
+			expect(() => getCommand('CREATE INDEX')).to.throw(Error, 'Unsupported command: CREATE INDEX');
+		});
+
+		it('should throw an error for DROP INDEX command', () => {
+			expect(() => getCommand('DROP INDEX')).to.throw(Error, 'Unsupported command: DROP INDEX');
+		});
 	});
 
 	describe('getCommandFromQuery', () => {

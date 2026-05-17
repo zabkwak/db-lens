@@ -57,6 +57,7 @@ const QueryEditor: React.FC<IProps> = (props) => {
 				payload,
 				// let the request timeout be long enough to let the query to fail
 				Math.max(30000, 30000 + timeout),
+				// 'test',
 			);
 			setResult({
 				type: resultCommand,
@@ -84,14 +85,28 @@ const QueryEditor: React.FC<IProps> = (props) => {
 	};
 	function renderData(): React.ReactNode {
 		if (result === null) {
+			if (isLoading) {
+				return <Loader />;
+			}
 			return null;
 		}
 		if (isResultType('query.result', result)) {
-			return <Table data={result.data?.data} columns={result.data?.columns} loading={isLoading} />;
+			return (
+				<Table
+					data={result.data?.data}
+					columns={result.data?.columns}
+					loading={isLoading}
+					rows={result.data?.rowCount ?? undefined}
+					duration={result.data?.duration ?? undefined}
+				/>
+			);
 		}
 		if (isResultType('query.explain.result', result) || isResultType('query.explainAnalyze.result', result)) {
-			if (isLoading || !result.data) {
+			if (isLoading) {
 				return <Loader />;
+			}
+			if (!result.data) {
+				return null;
 			}
 			if (!result.data.plan.length) {
 				return <p>No plan available.</p>;
