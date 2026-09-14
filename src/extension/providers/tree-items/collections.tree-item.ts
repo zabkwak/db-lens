@@ -1,27 +1,32 @@
 import * as vscode from 'vscode';
+import Connection from '../../../connection/connection';
 import BaseDriver from '../../../drivers/base';
 import CollectionsDataManager from '../data-managers/collections.data-manager';
 import DataTreeItem, { IDataTreeItemDescriptor } from './data.tree-item';
 import TreeItem from './tree-item';
 
 export default class CollectionsTreeItem extends DataTreeItem<string> {
-	private _driver: BaseDriver<unknown, unknown>;
+	private _connection: Connection<any, any>;
 	private _namespace: string;
 
 	constructor(
 		label: string,
 		parent: TreeItem | null,
-		driver: BaseDriver<unknown, unknown>,
+		connection: Connection<any, any>,
 		dataManager: CollectionsDataManager,
 		namespace: string,
 	) {
 		super(label, parent, dataManager);
-		this._driver = driver;
+		this._connection = connection;
 		this._namespace = namespace;
 	}
 
+	public getConnection(): Connection<any, any> {
+		return this._connection;
+	}
+
 	public getDriver(): BaseDriver<unknown, unknown> {
-		return this._driver;
+		return this._connection.getDriver();
 	}
 
 	public getNamespace(): string {

@@ -63,6 +63,11 @@
 			{
 				"command": "db-lens.viewRowAsJSON",
 				"title": "View Row as JSON"
+			},
+			{
+				"command": "db-lens.runSampleQuery",
+				"title": "Run sample query",
+				"icon": "$(play)"
 			}
 		],
 		"viewsContainers": {
@@ -119,6 +124,11 @@
 				{
 					"command": "db-lens.disconnect",
 					"when": "view == dbLensSidebar && viewItem == connection.connected",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.runSampleQuery",
+					"when": "view == dbLensSidebar && viewItem == collection",
 					"group": "inline"
 				}
 			],

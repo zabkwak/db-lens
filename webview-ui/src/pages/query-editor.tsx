@@ -1,5 +1,5 @@
 import { VSCodeButton, VSCodeDivider, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IMessagePayload, TPlatform } from '../../../shared/types';
 import FormControl from '../components/form-control';
 import Loader from '../components/loader';
@@ -18,6 +18,7 @@ interface IResult<T extends TResult> {
 
 interface IProps {
 	platform: TPlatform;
+	query: string | null;
 }
 
 function isResultType<T extends TResult>(
@@ -28,7 +29,7 @@ function isResultType<T extends TResult>(
 }
 
 const QueryEditor: React.FC<IProps> = (props) => {
-	const [query, setQuery] = useState('');
+	const [query, setQuery] = useState(props.query ?? '');
 	const [result, setResult] = useState<TState<IResult<TResult>>>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [timeout, setTimeout] = useState(30000);
@@ -73,16 +74,16 @@ const QueryEditor: React.FC<IProps> = (props) => {
 			setIsLoading(false);
 		}
 	}
-	const handleQueryChange = (e: React.FormEvent<HTMLTextAreaElement>) => {
+	function handleQueryChange(e: React.FormEvent<HTMLTextAreaElement>): void {
 		setQuery(e.currentTarget.value);
-	};
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+	}
+	function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>): void {
 		const cmdOrCtrl = props.platform === 'darwin' ? e.metaKey : e.ctrlKey;
 		if (e.key === 'Enter' && cmdOrCtrl) {
 			e.preventDefault();
 			handleRunQuery();
 		}
-	};
+	}
 	function renderData(): React.ReactNode {
 		if (result === null) {
 			if (isLoading) {
@@ -115,6 +116,13 @@ const QueryEditor: React.FC<IProps> = (props) => {
 		}
 		return null;
 	}
+	useEffect(() => {
+		if (!props.query) {
+			return;
+		}
+		setQuery(props.query);
+		handleRunQuery();
+	}, [props.query]);
 
 	return (
 		<div className="query-editor">

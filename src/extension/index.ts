@@ -7,6 +7,7 @@ import ConnectionManager from '../connection/connection-manager';
 import ConfigPanel from './panels/config.panel';
 import QueryPanel from './panels/query.panel';
 import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';
+import CollectionTreeItem from './providers/tree-items/collection.tree-item';
 import ConnectionTreeItem from './providers/tree-items/connection.tree-item';
 import NamespaceTreeItem from './providers/tree-items/namespace.tree-item';
 import { confirmWarningDialog } from './utils';
@@ -26,9 +27,11 @@ export function activate(context: vscode.ExtensionContext) {
 		}),
 		vscode.commands.registerCommand('db-lens.query', (item: ConnectionTreeItem<any, any> | NamespaceTreeItem) => {
 			new QueryPanel(
-				item.getConnection(),
+				item.getConnection().getName(),
+				item.getConnection().getDriver(),
 				context,
 				item instanceof NamespaceTreeItem ? item.getName() : null,
+				null,
 			).show();
 		}),
 		vscode.commands.registerCommand('db-lens.configure', (item: ConnectionTreeItem<any, any>) => {
@@ -46,6 +49,18 @@ export function activate(context: vscode.ExtensionContext) {
 				ViewManager.getConnectionTreeProvider().refresh();
 			}
 		}),
+		vscode.commands.registerCommand('db-lens.runSampleQuery', async (item: CollectionTreeItem) => {
+			// TODO run sample query on collection -> select * from collection limit 100 or something like that
+			const query = `SELECT * FROM ${item.label} LIMIT 100`;
+			new QueryPanel(
+				item.getConnection().getName(),
+				item.getDriver(),
+				context,
+				item.getNamespace(),
+				query,
+			).show();
+		}),
+		// Commands for webview panels
 		vscode.commands.registerCommand('db-lens.copyValue', async (args: any) => {
 			const { value } = args;
 			if (value) {

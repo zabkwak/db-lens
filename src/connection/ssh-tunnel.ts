@@ -88,6 +88,7 @@ export default class SSHTunnel {
 			}
 		});
 		this._sshTunnelProcess.on('close', (code) => {
+			// TODO emit close event / callback
 			Logger.info('ssh-tunnel', `child process exited with code ${code}`);
 		});
 		await sleep(Math.min(SPAWN_ERROR_WAIT_TIME, this._config.connectionTimeout));

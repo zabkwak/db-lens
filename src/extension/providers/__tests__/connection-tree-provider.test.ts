@@ -502,7 +502,7 @@ describe('ConnectionTreeProvider', () => {
 					new CollectionsTreeItem(
 						'Tables',
 						null,
-						mockConnection.getDriver(),
+						mockConnection,
 						new CollectionsDataManager(mockConnection, 'namespace'),
 						'namespace',
 					),
@@ -547,7 +547,7 @@ describe('ConnectionTreeProvider', () => {
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
-					mockConnection.getDriver(),
+					mockConnection,
 					new CollectionsDataManager(mockConnection, 'namespace'),
 					'namespace',
 				);
@@ -598,7 +598,7 @@ describe('ConnectionTreeProvider', () => {
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
-					mockConnection.getDriver(),
+					mockConnection,
 					new CollectionsDataManager(mockConnection, 'namespace'),
 					'namespace',
 				);
@@ -800,6 +800,8 @@ describe('ConnectionTreeProvider', () => {
 					new CollectionTreeItem(
 						'Collection 1',
 						null,
+						// TODO fix this
+						// @ts-expect-error
 						new MockDriver({}, new MockPasswordProvider({})),
 						'namespace',
 					),

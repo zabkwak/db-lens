@@ -118,7 +118,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			new CollectionsTreeItem(
 				'Tables',
 				element,
-				connection.getDriver(),
+				connection,
 				new CollectionsDataManager(connection, element.getName()),
 				element.getName(),
 			),
@@ -132,7 +132,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	public getCollectionsChildren(element: CollectionsTreeItem): TreeItem[] {
 		return this.getDataTreeItemChildren(
 			element,
-			(item) => new CollectionTreeItem(item.label, element, element.getDriver(), element.getNamespace()),
+			(item) => new CollectionTreeItem(item.label, element, element.getConnection(), element.getNamespace()),
 		);
 	}
 
