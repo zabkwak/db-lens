@@ -22,6 +22,7 @@ import DataTreeItem from '../tree-items/data.tree-item';
 import NamespaceTreeItem from '../tree-items/namespace.tree-item';
 import PropertiesTreeItem from '../tree-items/properties.tree-item';
 import TreeItem from '../tree-items/tree-item';
+import ViewTreeItem from '../tree-items/view.tree-item';
 import ViewsTreeItem from '../tree-items/views.tree-item';
 
 // TODO maybe move this to unit tests entirely? it doesn't need to vscode api .. or maybe use it as full scale integration test with the composed docker service
@@ -737,7 +738,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(2);
 				const [child1, child2] = children;
-				expect(child1).to.be.instanceOf(TreeItem);
+				expect(child1).to.be.instanceOf(ViewTreeItem);
 				expect(child1.label).to.equal('View 1');
 				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 				// @ts-expect-error
@@ -745,7 +746,7 @@ describe('ConnectionTreeProvider', () => {
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
 				expect(child1.getParent()).to.be.an.instanceOf(ViewsTreeItem);
-				expect(child2).to.be.instanceOf(TreeItem);
+				expect(child2).to.be.instanceOf(ViewTreeItem);
 				expect(child2.label).to.equal('View 2');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 				// @ts-expect-error

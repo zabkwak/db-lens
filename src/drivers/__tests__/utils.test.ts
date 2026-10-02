@@ -7,6 +7,7 @@ describe('Drivers Utils', () => {
 		it('should return true if driver has getViews method', () => {
 			const driver = {
 				getViews: () => [],
+				getViewDefinition: () => '',
 			} as unknown as BaseDriver<any, any>;
 			expect(isViewsDriver(driver)).to.be.true;
 		});
@@ -35,6 +36,7 @@ describe('Drivers Utils', () => {
 		it('should return true if driver has getSql method', () => {
 			const driver = {
 				getViews: () => [],
+				getViewDefinition: () => '',
 				getIndexes: () => [],
 				explain: () => {},
 				explainAnalyze: () => {},
