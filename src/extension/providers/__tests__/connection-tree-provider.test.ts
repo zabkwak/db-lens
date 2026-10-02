@@ -644,11 +644,20 @@ describe('ConnectionTreeProvider', () => {
 				): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
+				public getSampleQuery(collection: string): string {
+					throw new Error('Method not implemented.');
+				}
 				public async getViews(namespace: string): Promise<string[]> {
 					if (this._credentials.hasViews) {
 						return ['View 1', 'View 2'];
 					}
 					return [];
+				}
+				public async getViewDefinition(namespace: string, viewName: string): Promise<string> {
+					if (this._credentials.hasViews) {
+						return `Definition of ${viewName}`;
+					}
+					throw new Error('View not found');
 				}
 				public getName(): string {
 					return 'Mock SQL';
@@ -758,6 +767,9 @@ describe('ConnectionTreeProvider', () => {
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
+				public getSampleQuery(collection: string): string {
+					throw new Error('Method not implemented.');
+				}
 				public getName(): string {
 					return 'Mock SQL';
 				}
@@ -831,6 +843,9 @@ describe('ConnectionTreeProvider', () => {
 					namespace: string,
 					collectionName: string,
 				): Promise<ICollectionPropertyDescription[]> {
+					throw new Error('Method not implemented.');
+				}
+				public getSampleQuery(collection: string): string {
 					throw new Error('Method not implemented.');
 				}
 				public getName(): string {

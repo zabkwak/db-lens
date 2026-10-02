@@ -10,6 +10,7 @@ import SqlCopyCodeLensProvider from './providers/sql-copy-code-lens-provider';
 import CollectionTreeItem from './providers/tree-items/collection.tree-item';
 import ConnectionTreeItem from './providers/tree-items/connection.tree-item';
 import NamespaceTreeItem from './providers/tree-items/namespace.tree-item';
+import ViewTreeItem from './providers/tree-items/view.tree-item';
 import { confirmWarningDialog } from './utils';
 import ViewManager from './view-manager';
 
@@ -50,14 +51,12 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}),
 		vscode.commands.registerCommand('db-lens.runSampleQuery', async (item: CollectionTreeItem) => {
-			// TODO run sample query on collection -> select * from collection limit 100 or something like that
-			const query = `SELECT * FROM ${item.label} LIMIT 100`;
 			new QueryPanel(
 				item.getConnection().getName(),
 				item.getDriver(),
 				context,
 				item.getNamespace(),
-				query,
+				item.getDriver().getSampleQuery(item.label as string),
 			).show();
 		}),
 		// Commands for webview panels
@@ -76,6 +75,32 @@ export function activate(context: vscode.ExtensionContext) {
 					language: 'json',
 				});
 				await vscode.window.showTextDocument(document, { preview: true });
+			}
+		}),
+		vscode.commands.registerCommand('db-lens.showViewDefinition', async (item: ViewTreeItem) => {
+			const document = await vscode.workspace.openTextDocument({
+				content: '-- Loading view definition...',
+				language: 'sql',
+			});
+			const editor = await vscode.window.showTextDocument(document, { preview: true });
+			let content: string;
+			let loaded = false;
+			try {
+				content = await vscode.window.withProgress(
+					{ location: { viewId: 'dbLensSidebar' }, title: 'Loading view definition...' },
+					() => item.getDriver().getViewDefinition(item.getNamespace(), item.getName()),
+				);
+				loaded = true;
+			} catch (error: any) {
+				content = `-- Failed to load view definition: ${error?.message ?? error}`;
+			}
+			if (document.isClosed) {
+				return;
+			}
+			const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length));
+			await editor.edit((builder) => builder.replace(fullRange, content));
+			if (loaded && vscode.window.activeTextEditor?.document === document) {
+				await vscode.commands.executeCommand('editor.action.formatDocument');
 			}
 		}),
 	);

@@ -126,6 +126,10 @@ export default class PostgresDriver<U>
 		});
 	}
 
+	public getSampleQuery(collection: string): string {
+		return `SELECT * FROM ${collection}\nLIMIT 100`;
+	}
+
 	public async getViews(namespace: string): Promise<string[]> {
 		const { data, commit } = await this._executeQuery<{ viewname: string }>(
 			`SELECT viewname FROM pg_catalog.pg_views WHERE schemaname = $1 order by viewname asc`,
@@ -134,6 +138,28 @@ export default class PostgresDriver<U>
 		);
 		await commit();
 		return data.map((row) => row.viewname);
+	}
+
+	public async getViewDefinition(namespace: string, viewName: string): Promise<string> {
+		const { data, commit } = await this._executeQuery<{ definition: string }>(
+			`SELECT 
+    relname AS view_name,
+    CASE relkind 
+        WHEN 'v' THEN 'view' 
+        WHEN 'm' THEN 'materialized-view' 
+    END AS view_type,
+    pg_get_viewdef(oid, true) AS definition
+	FROM pg_class
+	WHERE relname = $1
+  		AND relkind IN ('v', 'm');`,
+			null,
+			[viewName],
+		);
+		await commit();
+		if (data.length === 0) {
+			throw new Error('View not found');
+		}
+		return data[0].definition;
 	}
 
 	public async getIndexes(namespace: string, collectionName: string): Promise<IIndexDescription[]> {
