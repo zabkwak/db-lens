@@ -425,6 +425,9 @@ describe('ConnectionTreeProvider', () => {
 							async getViews() {
 								return [];
 							},
+							async getViewDefinition() {
+								return '';
+							},
 						};
 					},
 					async connect() {},
@@ -813,9 +816,9 @@ describe('ConnectionTreeProvider', () => {
 					new CollectionTreeItem(
 						'Collection 1',
 						null,
-						// TODO fix this
-						// @ts-expect-error
-						new MockDriver({}, new MockPasswordProvider({})),
+						{
+							getDriver: () => new MockDriver({}, new MockPasswordProvider({})),
+						} as unknown as Connection<any, any>,
 						'namespace',
 					),
 				);
