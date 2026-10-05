@@ -22,6 +22,7 @@ import DataTreeItem from '../tree-items/data.tree-item';
 import NamespaceTreeItem from '../tree-items/namespace.tree-item';
 import PropertiesTreeItem from '../tree-items/properties.tree-item';
 import TreeItem from '../tree-items/tree-item';
+import ViewTreeItem from '../tree-items/view.tree-item';
 import ViewsTreeItem from '../tree-items/views.tree-item';
 
 // TODO maybe move this to unit tests entirely? it doesn't need to vscode api .. or maybe use it as full scale integration test with the composed docker service
@@ -424,6 +425,9 @@ describe('ConnectionTreeProvider', () => {
 							async getViews() {
 								return [];
 							},
+							async getViewDefinition() {
+								return '';
+							},
 						};
 					},
 					async connect() {},
@@ -502,7 +506,7 @@ describe('ConnectionTreeProvider', () => {
 					new CollectionsTreeItem(
 						'Tables',
 						null,
-						mockConnection.getDriver(),
+						mockConnection,
 						new CollectionsDataManager(mockConnection, 'namespace'),
 						'namespace',
 					),
@@ -547,7 +551,7 @@ describe('ConnectionTreeProvider', () => {
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
-					mockConnection.getDriver(),
+					mockConnection,
 					new CollectionsDataManager(mockConnection, 'namespace'),
 					'namespace',
 				);
@@ -598,7 +602,7 @@ describe('ConnectionTreeProvider', () => {
 				const collectionsTreeItem = new CollectionsTreeItem(
 					'Tables',
 					null,
-					mockConnection.getDriver(),
+					mockConnection,
 					new CollectionsDataManager(mockConnection, 'namespace'),
 					'namespace',
 				);
@@ -644,11 +648,20 @@ describe('ConnectionTreeProvider', () => {
 				): Promise<ICollectionPropertyDescription[]> {
 					throw new Error('Method not implemented.');
 				}
+				public getSampleQuery(collection: string): string {
+					throw new Error('Method not implemented.');
+				}
 				public async getViews(namespace: string): Promise<string[]> {
 					if (this._credentials.hasViews) {
 						return ['View 1', 'View 2'];
 					}
 					return [];
+				}
+				public async getViewDefinition(namespace: string, viewName: string): Promise<string> {
+					if (this._credentials.hasViews) {
+						return `Definition of ${viewName}`;
+					}
+					throw new Error('View not found');
 				}
 				public getName(): string {
 					return 'Mock SQL';
@@ -728,7 +741,7 @@ describe('ConnectionTreeProvider', () => {
 
 				expect(children).to.have.lengthOf(2);
 				const [child1, child2] = children;
-				expect(child1).to.be.instanceOf(TreeItem);
+				expect(child1).to.be.instanceOf(ViewTreeItem);
 				expect(child1.label).to.equal('View 1');
 				expect(child1.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 				// @ts-expect-error
@@ -736,7 +749,7 @@ describe('ConnectionTreeProvider', () => {
 				// @ts-expect-error
 				expect(child1.iconPath.color).to.be.undefined;
 				expect(child1.getParent()).to.be.an.instanceOf(ViewsTreeItem);
-				expect(child2).to.be.instanceOf(TreeItem);
+				expect(child2).to.be.instanceOf(ViewTreeItem);
 				expect(child2.label).to.equal('View 2');
 				expect(child2.collapsibleState).to.equal(TreeItemCollapsibleState.None);
 				// @ts-expect-error
@@ -756,6 +769,9 @@ describe('ConnectionTreeProvider', () => {
 					throw new Error('Method not implemented.');
 				}
 				public describeCollection(collectionName: string): Promise<ICollectionPropertyDescription[]> {
+					throw new Error('Method not implemented.');
+				}
+				public getSampleQuery(collection: string): string {
 					throw new Error('Method not implemented.');
 				}
 				public getName(): string {
@@ -800,7 +816,9 @@ describe('ConnectionTreeProvider', () => {
 					new CollectionTreeItem(
 						'Collection 1',
 						null,
-						new MockDriver({}, new MockPasswordProvider({})),
+						{
+							getDriver: () => new MockDriver({}, new MockPasswordProvider({})),
+						} as unknown as Connection<any, any>,
 						'namespace',
 					),
 				);
@@ -829,6 +847,9 @@ describe('ConnectionTreeProvider', () => {
 					namespace: string,
 					collectionName: string,
 				): Promise<ICollectionPropertyDescription[]> {
+					throw new Error('Method not implemented.');
+				}
+				public getSampleQuery(collection: string): string {
 					throw new Error('Method not implemented.');
 				}
 				public getName(): string {

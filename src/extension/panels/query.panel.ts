@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { EQueryCommand, IMessagePayload, IPostMessage } from '../../../shared/types';
 import { isCommand } from '../../../shared/utils';
-import Connection from '../../connection/connection';
+import BaseDriver from '../../drivers/base';
 import { IQueryResult } from '../../drivers/interfaces';
 import { isSqlDriver } from '../../drivers/utils';
 import Logger from '../../logger';
@@ -9,13 +9,21 @@ import { confirmErrorDialog, confirmWarningDialog, showError, showInfo } from '.
 import BasePanel from './base.panel';
 
 export default class QueryPanel extends BasePanel {
-	private _connection: Connection<any, any>;
+	private _driver: BaseDriver<any, any>;
 	private _namespace: string | null;
+	private _sampleQuery: string | null;
 
-	constructor(connection: Connection<any, any>, context: vscode.ExtensionContext, namespace: string | null) {
-		super(context, `DB Lens - ${connection.getName()} | ${namespace}`, 'db-lens.queryEditor');
-		this._connection = connection;
+	constructor(
+		connectionName: string,
+		driver: BaseDriver<any, any>,
+		context: vscode.ExtensionContext,
+		namespace: string | null,
+		sampleQuery: string | null,
+	) {
+		super(context, `DB Lens - ${connectionName} | ${namespace}`, 'db-lens.queryEditor');
+		this._driver = driver;
 		this._namespace = namespace;
+		this._sampleQuery = sampleQuery;
 	}
 
 	protected async _handleMessage(message: IPostMessage<any>): Promise<void> {
@@ -36,11 +44,20 @@ export default class QueryPanel extends BasePanel {
 		});
 	}
 
+	protected async _getInitialData(): Promise<object> {
+		return {
+			...(await super._getInitialData()),
+			query: this._sampleQuery,
+		};
+	}
+
 	private async _handleQuery(payload: IMessagePayload['query'], requestId?: string): Promise<void> {
 		try {
-			const result = await this._connection
-				.getDriver()
-				.query(payload.query, payload.timeout as number, this._namespace as string);
+			const result = await this._driver.query(
+				payload.query,
+				payload.timeout as number,
+				this._namespace as string,
+			);
 			if (result.command === EQueryCommand.SELECT) {
 				await result.commit();
 				this._sendQueryResult(result, requestId);
@@ -91,7 +108,7 @@ export default class QueryPanel extends BasePanel {
 	}
 
 	private async _handleExplain(payload: IMessagePayload['query.explain'], requestId?: string): Promise<void> {
-		const driver = this._connection.getDriver();
+		const driver = this._driver;
 		try {
 			if (!isSqlDriver(driver)) {
 				throw new Error(`${driver.getName()} does not support EXPLAIN queries.`);
@@ -116,7 +133,7 @@ export default class QueryPanel extends BasePanel {
 		payload: IMessagePayload['query.explainAnalyze'],
 		requestId?: string,
 	): Promise<void> {
-		const driver = this._connection.getDriver();
+		const driver = this._driver;
 		try {
 			if (!isSqlDriver(driver)) {
 				throw new Error(`${driver.getName()} does not support EXPLAIN ANALYZE queries.`);

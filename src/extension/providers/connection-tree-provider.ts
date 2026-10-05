@@ -18,6 +18,7 @@ import IndexesTreeItem from './tree-items/indexes.tree-item';
 import NamespaceTreeItem from './tree-items/namespace.tree-item';
 import PropertiesTreeItem from './tree-items/properties.tree-item';
 import TreeItem from './tree-items/tree-item';
+import ViewTreeItem from './tree-items/view.tree-item';
 import ViewsTreeItem from './tree-items/views.tree-item';
 
 export default class ConnectionTreeProvider implements vscode.TreeDataProvider<TreeItem> {
@@ -72,6 +73,9 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 		if (element instanceof CollectionTreeItem) {
 			return this.getCollectionChildren(element);
 		}
+		if (element instanceof ViewsTreeItem) {
+			return this.getViewsChildren(element);
+		}
 		if (element instanceof DataTreeItem) {
 			return this.getDataTreeItemChildren(element);
 		}
@@ -118,7 +122,7 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 			new CollectionsTreeItem(
 				'Tables',
 				element,
-				connection.getDriver(),
+				connection,
 				new CollectionsDataManager(connection, element.getName()),
 				element.getName(),
 			),
@@ -132,7 +136,14 @@ export default class ConnectionTreeProvider implements vscode.TreeDataProvider<T
 	public getCollectionsChildren(element: CollectionsTreeItem): TreeItem[] {
 		return this.getDataTreeItemChildren(
 			element,
-			(item) => new CollectionTreeItem(item.label, element, element.getDriver(), element.getNamespace()),
+			(item) => new CollectionTreeItem(item.label, element, element.getConnection(), element.getNamespace()),
+		);
+	}
+
+	public getViewsChildren(element: ViewsTreeItem): TreeItem[] {
+		return this.getDataTreeItemChildren(
+			element,
+			(item) => new ViewTreeItem(item.label, element, element.getDriver(), element.getNamespace()),
 		);
 	}
 

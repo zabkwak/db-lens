@@ -11,6 +11,14 @@ export default class ViewsDataManager extends BaseDataManager<string> {
 		this._namespace = namespace;
 	}
 
+	public getDriver(): IViewsDriver {
+		return this._driver;
+	}
+
+	public getNamespace(): string {
+		return this._namespace;
+	}
+
 	protected _loadData(): Promise<string[]> {
 		return this._driver.getViews(this._namespace);
 	}

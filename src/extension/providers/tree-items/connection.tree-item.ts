@@ -3,6 +3,7 @@ import Connection from '../../../connection/connection';
 import { drivers } from '../../../drivers';
 import { passwordProviders } from '../../../password-providers';
 import TreeItem from './tree-item';
+import { IContextValue } from './types';
 
 export enum EConnectionContextValue {
 	CONNECTED = 'connection.connected',
@@ -11,10 +12,11 @@ export enum EConnectionContextValue {
 	DISCONNECTED = 'connection.disconnected',
 }
 
-export default class ConnectionTreeItem<
-	T extends keyof typeof drivers,
-	U extends keyof typeof passwordProviders,
-> extends TreeItem {
+export default class ConnectionTreeItem<T extends keyof typeof drivers, U extends keyof typeof passwordProviders>
+	extends TreeItem
+	implements IContextValue
+{
+	public contextValue: string;
 	private _connection: Connection<T, U>;
 	private _namespaces: string[] | null = null;
 

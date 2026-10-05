@@ -79,6 +79,8 @@ export default abstract class BaseDriver<T, U> implements ILoggingInstance {
 		collectionName: string,
 	): Promise<ICollectionPropertyDescription[]>;
 
+	public abstract getSampleQuery(collection: string): string;
+
 	public query<T>(query: string): Promise<IQueryResult<T>>;
 	public query<T>(query: string, timeout: number): Promise<IQueryResult<T>>;
 	public query<T>(query: string, timeout: number, namespace: string): Promise<IQueryResult<T>>;

@@ -104,6 +104,10 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		});
 	}
 
+	public getSampleQuery(collection: string): string {
+		return `SELECT * FROM ${collection}\nLIMIT 100`;
+	}
+
 	public async getViews(namespace: string): Promise<string[]> {
 		const { data, commit } = await this._executeQuery<{ table_name: string }>(
 			`SHOW FULL TABLES WHERE Table_type = 'VIEW'`,
@@ -111,6 +115,19 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 		);
 		await commit();
 		return data.map((row) => row.table_name);
+	}
+
+	public async getViewDefinition(namespace: string, viewName: string): Promise<string> {
+		const { data, commit } = await this._executeQuery<{ view_definition: string }>(
+			`SELECT VIEW_DEFINITION AS view_definition FROM INFORMATION_SCHEMA.VIEWS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+			namespace,
+			[namespace, viewName],
+		);
+		await commit();
+		if (data.length === 0) {
+			throw new Error('View not found');
+		}
+		return data[0].view_definition;
 	}
 
 	public async getIndexes(namespace: string, collectionName: string): Promise<IIndexDescription[]> {

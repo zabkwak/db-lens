@@ -63,6 +63,11 @@
 			{
 				"command": "db-lens.viewRowAsJSON",
 				"title": "View Row as JSON"
+			},
+			{
+				"command": "db-lens.runSampleQuery",
+				"title": "Run sample query",
+				"icon": "$(play)"
 			}
 		],
 		"viewsContainers": {
@@ -119,6 +124,11 @@
 				{
 					"command": "db-lens.disconnect",
 					"when": "view == dbLensSidebar && viewItem == connection.connected",
+					"group": "inline"
+				},
+				{
+					"command": "db-lens.runSampleQuery",
+					"when": "view == dbLensSidebar && viewItem == collection",
 					"group": "inline"
 				}
 			],
@@ -206,8 +216,8 @@
 		"@types/vscode": "^1.94.0",
 		"@typescript-eslint/eslint-plugin": "^8.7.0",
 		"@typescript-eslint/parser": "^8.7.0",
-		"@vscode/test-cli": "^0.0.11",
-		"@vscode/test-electron": "^2.4.1",
+		"@vscode/test-cli": "^0.0.15",
+		"@vscode/test-electron": "^3.1.0",
 		"chai": "^4.5.0",
 		"chai-as-promised": "^7.1.2",
 		"esbuild": "^0.24.0",

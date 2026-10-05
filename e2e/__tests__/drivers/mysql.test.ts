@@ -319,6 +319,26 @@ describe('MySQL Driver', () => {
 			});
 		});
 
+		describe('.getViewDefinition', () => {
+			afterEach(async () => {
+				await mysqlQuery('DROP VIEW IF EXISTS test_view');
+			});
+
+			it('should return the view definition', async () => {
+				await mysqlQuery('CREATE VIEW test_view AS SELECT id, username FROM users');
+				const definition = await mysql.getViewDefinition('db_lens', 'test_view');
+				expect(definition).to.equal(
+					`select \`db_lens\`.\`users\`.\`id\` AS \`id\`,\`db_lens\`.\`users\`.\`username\` AS \`username\` from \`db_lens\`.\`users\``,
+				);
+			});
+
+			it('should throw an error if the view does not exist', async () => {
+				await expect(mysql.getViewDefinition('db_lens', 'non_existing_view')).to.be.rejectedWith(
+					'View not found',
+				);
+			});
+		});
+
 		describe('.getIndexes', () => {
 			afterEach(async () => {
 				try {

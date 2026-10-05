@@ -12,33 +12,39 @@ This extension enables secure connections to AWS RDS databases by combining SSH 
 
 **How it works:**
 
--   The extension establishes an SSH tunnel to a bastion (jump) host within your VPC.
--   It then generates a temporary AWS RDS IAM authentication token for your database user.
--   The database connection is made through the SSH tunnel using the IAM token as the password.
+- The extension establishes an SSH tunnel to a bastion (jump) host within your VPC.
+- It then generates a temporary AWS RDS IAM authentication token for your database user.
+- The database connection is made through the SSH tunnel using the IAM token as the password.
 
 ## Features
 
--   Secure database connections using SSH tunneling.
--   Passwordless authentication with AWS RDS IAM.
--   Manage and save multiple connection profiles.
+- Secure database connections using SSH tunneling.
+- Passwordless authentication with AWS RDS IAM.
+- Manage and save multiple connection profiles.
 
 ## Requirements
 
--   for AWS
-    -   AWS CLI installed and configured
-    -   IAM user with permissions to generate RDS authentication tokens
+- for AWS
+    - AWS CLI installed and configured
+    - IAM user with permissions to generate RDS authentication tokens
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
--   `db-lens.baseDir`: The base directory for DB Lens.
--   `db-lens.portRange`: The port range for random ports used by the SSH tunnel.
+- `db-lens.baseDir`: The base directory for DB Lens.
+- `db-lens.portRange`: The port range for random ports used by the SSH tunnel.
 
 ## Known Issues
 
 ## Future Improvements
 
--   Windows support
--   NoSQL database support
--   Other cloud providers
+- Windows support
+- NoSQL database support
+- Other cloud providers
+
+## Run the Extension
+
+```bash
+code --extensionDevelopmentPath="$(pwd)" --new-window
+```

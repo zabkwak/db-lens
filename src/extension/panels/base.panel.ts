@@ -1,21 +1,41 @@
+import { randomUUID } from 'node:crypto';
 import * as vscode from 'vscode';
 import { IMessagePayload, IPostMessage } from '../../../shared/types';
 import { isCommand } from '../../../shared/utils';
 import Logger from '../../logger';
 import { showError } from '../utils';
+import PanelManager from './panel-manager';
 
 export default abstract class BasePanel {
+	public id: string;
+
 	protected _context: vscode.ExtensionContext;
 
 	private _panel: vscode.WebviewPanel;
 
 	private _showed: boolean = false;
 
+	private _viewType: string;
+
+	private _title: string;
+
 	constructor(context: vscode.ExtensionContext, title: string, viewType: string) {
+		this.id = randomUUID();
 		this._context = context;
+		this._viewType = viewType;
+		this._title = title;
 		this._panel = vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.One, {
 			enableScripts: true,
 			retainContextWhenHidden: true,
+		});
+		this._panel.onDidDispose(() => {
+			this._showed = false;
+			PanelManager.getInstance().unregisterPanel(this);
+			Logger.info('extension', 'Panel disposed', {
+				viewType: this._viewType,
+				title: this._title,
+			});
+			this._onDispose();
 		});
 	}
 
@@ -27,6 +47,12 @@ export default abstract class BasePanel {
 			this._panel.webview.html = this._getWebviewContent(this._panel.webview, this._context.extensionUri);
 			this._panel.webview.onDidReceiveMessage(this._didReceiveMessage, undefined, this._context.subscriptions);
 		}
+		PanelManager.getInstance().registerPanel(this);
+		Logger.info('extension', 'Panel shown', {
+			viewType: this._viewType,
+			title: this._title,
+		});
+		this._onShow();
 	}
 
 	public postMessage<T extends keyof IMessagePayload>(message: IPostMessage<T>): void {
@@ -41,6 +67,10 @@ export default abstract class BasePanel {
 	protected async _getInitialData(): Promise<object> {
 		return {};
 	}
+
+	protected _onShow(): void {}
+
+	protected _onDispose(): void {}
 
 	private _getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri) {
 		// Get the URI for the compiled JS file

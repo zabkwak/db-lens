@@ -2,7 +2,7 @@ import BaseDriver from './base';
 import { IIndexesDriver, ISqlDriver, IViewsDriver } from './interfaces';
 
 export function isViewsDriver<T, U>(driver: BaseDriver<T, U>): driver is BaseDriver<T, U> & IViewsDriver {
-	return 'getViews' in driver;
+	return 'getViews' in driver && 'getViewDefinition' in driver;
 }
 
 export function isIndexesDriver<T, U>(driver: BaseDriver<T, U>): driver is BaseDriver<T, U> & IIndexesDriver {

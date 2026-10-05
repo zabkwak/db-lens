@@ -30,6 +30,7 @@ export interface ICollectionPropertyDescription {
 
 export interface IViewsDriver {
 	getViews(namespace: string): Promise<string[]>;
+	getViewDefinition(namespace: string, viewName: string): Promise<string>;
 }
 
 export interface IIndexesDriver {

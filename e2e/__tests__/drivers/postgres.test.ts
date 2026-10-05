@@ -267,6 +267,24 @@ describe('PostgreSQL Driver', () => {
 			});
 		});
 
+		describe('.getViewDefinition', () => {
+			afterEach(async () => {
+				await postgresQuery('DROP VIEW IF EXISTS test_view');
+			});
+
+			it('should return the view definition', async () => {
+				await postgresQuery('CREATE VIEW test_view AS SELECT id, username FROM users');
+				const definition = await postgres.getViewDefinition('public', 'test_view');
+				expect(definition).to.equal(' SELECT id,\n    username\n   FROM users;');
+			});
+
+			it('should throw an error if the view does not exist', async () => {
+				await expect(postgres.getViewDefinition('public', 'non_existing_view')).to.be.rejectedWith(
+					'View not found',
+				);
+			});
+		});
+
 		describe('.getIndexes', () => {
 			afterEach(async () => {
 				try {

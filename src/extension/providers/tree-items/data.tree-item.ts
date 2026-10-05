@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import BaseDataManager from '../data-managers/base.data-manager';
-import TreeItem from './tree-item';
+import TreeItem, { ICommand } from './tree-item';
 
 export interface IDataTreeItemDescriptor {
 	label: string;
 	collapsibleState: vscode.TreeItemCollapsibleState;
 	icon: string;
+	command?: ICommand;
 }
 
 export interface IDataTreeItemConfig {
@@ -75,4 +76,8 @@ export default abstract class DataTreeItem<T> extends TreeItem {
 	protected abstract _getIcon(): vscode.ThemeIcon | undefined;
 
 	protected abstract _describeDataItem(item: T): IDataTreeItemDescriptor;
+
+	protected _getDataManager(): BaseDataManager<T> {
+		return this._dataManager;
+	}
 }

@@ -1,5 +1,11 @@
 import * as vscode from 'vscode';
 
+export interface ICommand<T = any> {
+	title: string;
+	command: string;
+	params?: T;
+}
+
 export default class TreeItem extends vscode.TreeItem {
 	public static loading(): TreeItem;
 	public static loading(label: string): TreeItem;
