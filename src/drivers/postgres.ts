@@ -13,6 +13,7 @@ import {
 	ISqlDriver,
 } from './interfaces';
 import { getCommand } from './sql/utils';
+import { stripOuterParentheses } from './utils';
 
 export interface IPostgresCredentials {
 	host: string;
@@ -38,7 +39,8 @@ interface ICollectionIndexRecord {
 	name: string;
 	kind: 'PRIMARY KEY' | 'UNIQUE' | 'INDEX';
 	type: string;
-	columns: string;
+	columns: string[];
+	included_columns: string[] | undefined;
 	condition: string | null;
 }
 
@@ -172,13 +174,16 @@ export default class PostgresDriver<U>
         ELSE 'INDEX'
     END AS kind,
     am.amname AS type,
-    array_to_string(
-        ARRAY(
-            SELECT pg_get_indexdef(idx.indexrelid, k + 1, TRUE)
-            FROM generate_subscripts(idx.indkey, 1) AS k
-            ORDER BY k
-        ), ','
+    ARRAY(
+        SELECT pg_get_indexdef(idx.indexrelid, k.pos + 1, TRUE)
+        FROM generate_series(0, idx.indnkeyatts - 1) AS k(pos)
+        ORDER BY k.pos
     ) AS columns,
+    ARRAY(
+        SELECT pg_get_indexdef(idx.indexrelid, k.pos + 1, TRUE)
+        FROM generate_series(idx.indnkeyatts, idx.indnatts - 1) AS k(pos)
+        ORDER BY k.pos
+    ) AS included_columns,
     pg_get_expr(idx.indpred, idx.indrelid) AS condition
 FROM pg_index idx
 JOIN pg_class i ON i.oid = idx.indexrelid
@@ -196,7 +201,9 @@ WHERE t.relname = $1
 				name: row.name,
 				kind: row.kind,
 				type: row.type,
-				columns: row.columns.split(','),
+				columns: row.columns,
+				includedColumns: row.included_columns || [],
+				condition: stripOuterParentheses(row.condition),
 			};
 		});
 	}

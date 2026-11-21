@@ -59,5 +59,41 @@ describe('AWSRDSTokenPasswordProvider', () => {
 			// @ts-expect-error _expiresAt is private
 			expect(password._expiresAt).to.be.an.instanceOf(Date);
 		});
+
+		it('should throw a descriptive error when the SSO session has expired', async () => {
+			execStub.callsFake((cmd, callback) => {
+				callback(
+					new Error(
+						'Command failed: aws rds generate-db-auth-token\nThe SSO session associated with this profile has expired or is otherwise invalid. To refresh this SSO session run aws sso login with the corresponding profile.',
+					),
+					'',
+					'',
+				);
+			});
+			const provider = new AWSRDSTokenPasswordProvider({
+				host: 'localhost',
+				port: 6666,
+				username: 'user',
+				region: 'region',
+				profile: 'profile',
+			});
+			await expect(provider.getPassword()).to.be.rejectedWith(
+				'AWS SSO session for profile "profile" has expired',
+			);
+		});
+
+		it('should rethrow other errors unchanged', async () => {
+			execStub.callsFake((cmd, callback) => {
+				callback(new Error('baf'), '', '');
+			});
+			const provider = new AWSRDSTokenPasswordProvider({
+				host: 'localhost',
+				port: 6666,
+				username: 'user',
+				region: 'region',
+				profile: 'profile',
+			});
+			await expect(provider.getPassword()).to.be.rejectedWith('baf');
+		});
 	});
 });

@@ -151,6 +151,8 @@ export default class MysqlDriver<U> extends BaseDriver<IMysqlCredentials, U> imp
 						kind,
 						type: record.Index_type,
 						columns: [record.Column_name],
+						includedColumns: [],
+						condition: null,
 					},
 				];
 			}

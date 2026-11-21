@@ -32,6 +32,7 @@ const QueryEditor: React.FC<IProps> = (props) => {
 	const [query, setQuery] = useState(props.query ?? '');
 	const [result, setResult] = useState<TState<IResult<TResult>>>(null);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isPlanCopied, setIsPlanCopied] = useState(false);
 	const [timeout, setTimeout] = useState(30000);
 	async function handleRunQuery(): Promise<void> {
 		await execute('query', 'query.result', { query, timeout });
@@ -51,6 +52,7 @@ const QueryEditor: React.FC<IProps> = (props) => {
 		payload: IMessagePayload[T],
 	): Promise<void> {
 		setIsLoading(true);
+		setIsPlanCopied(false);
 		setResult(null);
 		try {
 			const result = await Request.request<T, TResult>(
@@ -84,6 +86,17 @@ const QueryEditor: React.FC<IProps> = (props) => {
 			handleRunQuery();
 		}
 	}
+	async function handleCopyPlan(plan: string): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(plan);
+			setIsPlanCopied(true);
+		} catch (error) {
+			vscode.postMessage({
+				command: 'error',
+				payload: { message: error instanceof Error ? error.message : String(error) },
+			});
+		}
+	}
 	function renderData(): React.ReactNode {
 		if (result === null) {
 			if (isLoading) {
@@ -112,7 +125,17 @@ const QueryEditor: React.FC<IProps> = (props) => {
 			if (!result.data.plan.length) {
 				return <p>No plan available.</p>;
 			}
-			return <pre>{result.data.plan.join('\n')}</pre>;
+			const plan = result.data.plan.join('\n');
+			return (
+				<div className="plan-result">
+					<div className="plan-controls">
+						<VSCodeButton className="button" onClick={() => handleCopyPlan(plan)}>
+							{isPlanCopied ? 'Copied' : 'Copy'}
+						</VSCodeButton>
+					</div>
+					<pre>{plan}</pre>
+				</div>
+			);
 		}
 		return null;
 	}

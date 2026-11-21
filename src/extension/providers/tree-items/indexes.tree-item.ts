@@ -4,8 +4,12 @@ import DataTreeItem, { IDataTreeItemDescriptor } from './data.tree-item';
 
 export default class IndexesTreeItem extends DataTreeItem<IIndexDescription> {
 	protected _describeDataItem(item: IIndexDescription): IDataTreeItemDescriptor {
+		const includedColumns =
+			item.includedColumns.length > 0 ? ` INCLUDE (${item.includedColumns.join(', ')})` : '';
+		const condition = item.condition ? ` WHERE ${item.condition}` : '';
+		const columns = `(${item.columns.join(', ')})${includedColumns}${condition}`;
 		return {
-			label: `${item.name} - ${item.kind} ${item.type} (${item.columns.join(', ')})`,
+			label: `${item.name} - ${item.kind} ${item.type} ${columns}`,
 			collapsibleState: vscode.TreeItemCollapsibleState.None,
 			icon: item.kind === 'PRIMARY KEY' ? 'key' : 'output',
 		};
