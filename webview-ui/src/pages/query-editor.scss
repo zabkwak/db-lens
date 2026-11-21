@@ -23,9 +23,29 @@
 
 	& > .result-section {
 		flex: 1 1 0;
+		min-height: 0;
 		padding: 12px;
-		& > pre {
-			overflow: auto;
+		overflow: hidden;
+
+		.plan-result {
+			position: relative;
+			height: 100%;
+			overflow: hidden;
+
+			.plan-controls {
+				position: absolute;
+				top: 8px;
+				right: 8px;
+				z-index: 1;
+			}
+
+			& > pre {
+				box-sizing: border-box;
+				height: 100%;
+				margin: 0;
+				overflow: auto;
+				padding-top: 44px;
+			}
 		}
 	}
 }

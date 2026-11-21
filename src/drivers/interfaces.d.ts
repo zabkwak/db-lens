@@ -52,6 +52,8 @@ export interface IIndexDescription {
 	kind: 'PRIMARY KEY' | 'UNIQUE' | 'INDEX';
 	type: string;
 	columns: string[];
+	includedColumns: string[];
+	condition: string | null;
 }
 
 export interface IMySQLExplainRow {

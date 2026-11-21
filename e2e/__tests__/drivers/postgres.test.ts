@@ -290,6 +290,12 @@ describe('PostgreSQL Driver', () => {
 				try {
 					await postgresQuery('DROP INDEX username_email');
 				} catch (e) {}
+				try {
+					await postgresQuery('DROP INDEX username_include_email');
+				} catch (e) {}
+				try {
+					await postgresQuery('DROP INDEX username_partial');
+				} catch (e) {}
 			});
 
 			it('should return list of indexes for users table', async () => {
@@ -301,18 +307,24 @@ describe('PostgreSQL Driver', () => {
 						kind: 'PRIMARY KEY',
 						type: 'btree',
 						columns: ['id'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'users_username_key',
 						kind: 'UNIQUE',
 						type: 'btree',
 						columns: ['username'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'users_email_key',
 						kind: 'UNIQUE',
 						type: 'btree',
 						columns: ['email'],
+						includedColumns: [],
+						condition: null,
 					},
 				]);
 			});
@@ -327,26 +339,57 @@ describe('PostgreSQL Driver', () => {
 						kind: 'PRIMARY KEY',
 						type: 'btree',
 						columns: ['id'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'users_username_key',
 						kind: 'UNIQUE',
 						type: 'btree',
 						columns: ['username'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'users_email_key',
 						kind: 'UNIQUE',
 						type: 'btree',
 						columns: ['email'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'username_email',
 						kind: 'INDEX',
 						type: 'btree',
 						columns: ['username', 'email'],
+						includedColumns: [],
+						condition: null,
 					},
 				]);
+			});
+
+			it('should return included columns separately from index keys', async () => {
+				await postgresQuery('CREATE INDEX username_include_email ON users (username) INCLUDE (email)');
+				const indexes = await postgres.getIndexes('public', 'users');
+				const index = indexes.find(({ name }) => name === 'username_include_email');
+
+				expect(index).to.deep.equal({
+					name: 'username_include_email',
+					kind: 'INDEX',
+					type: 'btree',
+					columns: ['username'],
+					includedColumns: ['email'],
+					condition: null,
+				});
+			});
+
+			it('should return the condition for a partial index', async () => {
+				await postgresQuery('CREATE INDEX username_partial ON users (username) WHERE email IS NOT NULL');
+				const indexes = await postgres.getIndexes('public', 'users');
+				const index = indexes.find(({ name }) => name === 'username_partial');
+
+				expect(index?.condition).to.equal('email IS NOT NULL');
 			});
 		});
 

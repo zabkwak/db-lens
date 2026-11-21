@@ -355,18 +355,24 @@ describe('MySQL Driver', () => {
 						kind: 'PRIMARY KEY',
 						type: 'BTREE',
 						columns: ['id'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'username',
 						kind: 'UNIQUE',
 						type: 'BTREE',
 						columns: ['username'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'email',
 						kind: 'UNIQUE',
 						type: 'BTREE',
 						columns: ['email'],
+						includedColumns: [],
+						condition: null,
 					},
 				]);
 			});
@@ -381,24 +387,32 @@ describe('MySQL Driver', () => {
 						kind: 'PRIMARY KEY',
 						type: 'BTREE',
 						columns: ['id'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'username',
 						kind: 'UNIQUE',
 						type: 'BTREE',
 						columns: ['username'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'email',
 						kind: 'UNIQUE',
 						type: 'BTREE',
 						columns: ['email'],
+						includedColumns: [],
+						condition: null,
 					},
 					{
 						name: 'username_email',
 						kind: 'INDEX',
 						type: 'BTREE',
 						columns: ['username', 'email'],
+						includedColumns: [],
+						condition: null,
 					},
 				]);
 			});
