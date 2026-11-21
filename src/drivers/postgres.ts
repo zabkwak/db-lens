@@ -13,6 +13,7 @@ import {
 	ISqlDriver,
 } from './interfaces';
 import { getCommand } from './sql/utils';
+import { stripOuterParentheses } from './utils';
 
 export interface IPostgresCredentials {
 	host: string;
@@ -202,7 +203,7 @@ WHERE t.relname = $1
 				type: row.type,
 				columns: row.columns,
 				includedColumns: row.included_columns || [],
-				condition: row.condition,
+				condition: stripOuterParentheses(row.condition),
 			};
 		});
 	}
